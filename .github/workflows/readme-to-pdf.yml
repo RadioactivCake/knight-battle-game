@@ -12,16 +12,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Convert Markdown to PDF
-        uses: docker://pandoc/latex:latest
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          args: >-
-            --output=README.pdf
-            --pdf-engine=xelatex
-            --variable=geometry:margin=1in
-            README.md
+          node-version: '20'
       
-      - name: Upload PDF
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf
+      
+      - name: Convert to PDF
+        run: md-to-pdf README.md --launch-options '{"args": ["--no-sandbox"]}'
+      
+      - name: Upload to Google Drive
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          filename: "README.pdf"
+          folderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          name: "Knight-Battle-Game-README.pdf"
+          overwrite: "true"
+      
+      - name: Upload PDF as Artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: README-PDF
