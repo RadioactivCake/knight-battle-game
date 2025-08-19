@@ -23,9 +23,56 @@ jobs:
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
-      - name: Upload to Google Drive
-        uses: willo32/google-drive-upload@v1
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          target: README.pdf
-          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          parent_folder_id: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          service_account_key: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+      
+      - name: Upload to Google Drive
+        run: |
+          gcloud auth activate-service-account --key-file <(echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}')
+          pip install google-api-python-client google-auth
+          python3 << 'EOF'
+          import os
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          from google.oauth2 import service_account
+          import json
+          
+          # Load credentials
+          creds_json = '''${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}'''
+          creds_info = json.loads(creds_json)
+          credentials = service_account.Credentials.from_service_account_info(creds_info)
+          
+          # Build Drive service
+          service = build('drive', 'v3', credentials=credentials)
+          
+          # Upload file
+          file_metadata = {
+              'name': 'Knight-Battle-Game-README.pdf',
+              'parents': ['${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}']
+          }
+          media = MediaFileUpload('README.pdf', mimetype='application/pdf')
+          
+          # Check if file exists and delete it
+          try:
+              results = service.files().list(
+                  q=f"name='Knight-Battle-Game-README.pdf' and parents in '${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}'",
+                  fields="files(id, name)"
+              ).execute()
+              files = results.get('files', [])
+              for file in files:
+                  service.files().delete(fileId=file['id']).execute()
+                  print(f"Deleted existing file: {file['name']}")
+          except Exception as e:
+              print(f"No existing file to delete: {e}")
+          
+          # Upload new file
+          file = service.files().create(
+              body=file_metadata,
+              media_body=media,
+              fields='id'
+          ).execute()
+          print(f"File uploaded successfully. File ID: {file.get('id')}")
+          EOF
