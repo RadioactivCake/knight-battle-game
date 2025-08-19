@@ -1,0 +1,30 @@
+name: Generate README PDF
+on:
+  push:
+    paths:
+      - 'README.md'
+  workflow_dispatch:
+
+jobs:
+  generate-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf
+      
+      - name: Convert README to PDF
+        run: md-to-pdf README.md --pdf-options '{"format": "A4", "margin": "20mm"}'
+      
+      - name: Upload PDF
+        uses: actions/upload-artifact@v3
+        with:
+          name: README-PDF
+          path: README.pdf
