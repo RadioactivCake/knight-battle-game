@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Background Image that fills entire screen -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/lobby_background_image"
+        android:scaleType="centerCrop"
+        android:contentDescription="Profile Background" />
+
+    <!-- All content on top of background -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingTop="40dp">
+
+            <!-- Header with title and back button -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="30dp">
+
+                <Button
+                    android:id="@+id/backButton"
+                    android:layout_width="80dp"
+                    android:layout_height="50dp"
+                    android:text="BACK"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/secondary_button_style"
+                    android:textColor="@android:color/white" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="EDIT PROFILE"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#F44336"
+                    android:shadowColor="@android:color/black"
+                    android:shadowDx="3"
+                    android:shadowDy="3"
+                    android:shadowRadius="1"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif-black" />
+
+                <!-- Empty space for balance -->
+                <View
+                    android:layout_width="80dp"
+                    android:layout_height="50dp" />
+
+            </LinearLayout>
+
+            <!-- Profile editing form -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/player_card_background"
+                android:padding="30dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="20dp">
+
+                <!-- Current full name display -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your Knight Name:"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/fullNameDisplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Warrior the Great"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFD700"
+                    android:shadowColor="@android:color/black"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="1"
+                    android:layout_marginBottom="30dp"
+                    android:layout_gravity="center" />
+
+                <!-- Name input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="First Name (single word):"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/nameInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:hint="Enter your name"
+                    android:padding="12dp"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:inputType="textPersonName"
+                    android:maxLines="1"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Title selection -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Knight Title:"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="8dp" />
+
+                <Spinner
+                    android:id="@+id/titleSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:layout_marginBottom="30dp" />
+
+                <!-- Save button -->
+                <Button
+                    android:id="@+id/saveButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="SAVE PROFILE"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/attack_button_style"
+                    android:textColor="@android:color/white" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</FrameLayout>

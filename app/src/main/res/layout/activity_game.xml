@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Solid background color to ensure no white spaces -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#87CEEB" />
+
+    <!-- Background Image that fills entire screen -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/game_background_image"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="false"
+        android:contentDescription="Game Background" />
+
+    <!-- All game content on top of background -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:paddingTop="40dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Character Info in Upper Corners with Stage Counter -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Player Info - Upper Left (Enhanced for Dual Squires) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/player_card_background"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="-20dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:id="@+id/playerNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PLAYER"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:id="@+id/knightTypeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Brave Knight"
+                    android:textSize="11sp"
+                    android:textColor="#FFD700"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/playerHealthText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100/100"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="4dp" />
+
+                <ProgressBar
+                    android:id="@+id/playerHealthBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:max="100"
+                    android:progress="100"
+                    android:progressTint="#4CAF50"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- Enhanced Squire Display for Dual Squires -->
+                <TextView
+                    android:id="@+id/squireText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🛡️ SQUIRE: None Equipped\n   No passive effect\n\n🔒 2ND SQUIRE: Locked\n   Unlock with King's Blessing event"
+                    android:textSize="8sp"
+                    android:textColor="#FFD700"
+                    android:background="#33000000"
+                    android:padding="4dp"
+                    android:minLines="1"
+                    android:maxLines="8"
+                    android:scrollbars="vertical"
+                    android:lineSpacingExtra="1dp"
+                    android:fontFamily="monospace" />
+
+            </LinearLayout>
+
+            <!-- Stage Counter - Center -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginHorizontal="12dp">
+
+                <TextView
+                    android:id="@+id/worldCounter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="WORLD 1"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFD700"
+                    android:shadowColor="@android:color/black"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="1"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STAGE"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:shadowColor="@android:color/black"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="1"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/stageCounter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1/5"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFD700"
+                    android:shadowColor="@android:color/black"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="1" />
+
+            </LinearLayout>
+
+            <!-- Enemy Info - Upper Right -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/enemy_card_background"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="-20dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <TextView
+                    android:id="@+id/enemyNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ENEMY"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/enemyHealthText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100/100"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginBottom="4dp" />
+
+                <ProgressBar
+                    android:id="@+id/enemyHealthBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:max="100"
+                    android:progress="100"
+                    android:progressTint="#F44336" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Empty Space for Character Drawings -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="bottom"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <!-- Player Character Area - Left Side -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="bottom|center_horizontal"
+                android:orientation="vertical"
+                android:layout_marginBottom="-150dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Player Character Image -->
+                <ImageView
+                    android:id="@+id/playerCharacterImage"
+                    android:layout_width="260dp"
+                    android:layout_height="320dp"
+                    android:src="@drawable/player_character"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Player Character" />
+
+            </LinearLayout>
+
+            <!-- Battle Area - Center (Empty Space) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginBottom="60dp">
+
+                <!-- Empty space for clean battlefield look -->
+
+            </LinearLayout>
+
+            <!-- Enemy Character Area - Right Side -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="bottom|center_horizontal"
+                android:orientation="vertical"
+                android:layout_marginBottom="-100dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- Enemy Character Image -->
+                <ImageView
+                    android:id="@+id/enemyCharacterImage"
+                    android:layout_width="250dp"
+                    android:layout_height="310dp"
+                    android:src="@drawable/enemy_character"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Enemy Character" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Attack Buttons at Bottom -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:paddingTop="20dp">
+
+            <!-- Light Attack Button -->
+            <Button
+                android:id="@+id/lightAttackButton"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="LIGHT\n(stun chance)"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/attack_button_style"
+                android:textColor="@android:color/white" />
+
+            <!-- Medium Attack Button -->
+            <Button
+                android:id="@+id/mediumAttackButton"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                android:text="MEDIUM\n(normal)"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/attack_button_style"
+                android:textColor="@android:color/white" />
+
+            <!-- Heavy Attack Button -->
+            <Button
+                android:id="@+id/heavyAttackButton"
+                android:layout_width="0dp"
+                android:layout_height="60dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="HEAVY\n(2x or miss)"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="@drawable/attack_button_style"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Surrender Button - Positioned absolutely in bottom right -->
+    <TextView
+        android:id="@+id/surrenderButton"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|end"
+        android:text="F"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:background="@drawable/circle_button_style"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp" />
+
+</FrameLayout>
