@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g md-to-pdf
-          pip install google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
+          pip install google-api-python-client google-auth
       
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
@@ -28,6 +28,20 @@ jobs:
       - name: Create credentials file
         run: |
           echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}' > credentials.json
+      
+      - name: Debug folder and credentials
+        env:
+          FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          echo "🔍 Folder ID: $FOLDER_ID"
+          echo "📁 PDF file exists: $(ls -la README.pdf)"
+          python3 -c "
+          import json
+          with open('credentials.json') as f: 
+              creds = json.load(f)
+          print(f'📧 Service account: {creds[\"client_email\"]}')
+          print(f'🆔 Project: {creds[\"project_id\"]}')
+          "
       
       - name: Upload to Google Drive
         env:
@@ -39,62 +53,94 @@ jobs:
           from googleapiclient.discovery import build
           from googleapiclient.http import MediaFileUpload
           from google.oauth2 import service_account
+          from googleapiclient.errors import HttpError
           
-          # Read credentials from file
-          with open('credentials.json', 'r') as f:
-              creds_info = json.load(f)
-          
-          folder_id = os.environ['FOLDER_ID']
-          
-          # Create credentials
-          credentials = service_account.Credentials.from_service_account_info(
-              creds_info, 
-              scopes=['https://www.googleapis.com/auth/drive.file']
-          )
-          
-          # Build Drive service
-          service = build('drive', 'v3', credentials=credentials)
-          
-          # Check if file exists and delete it
-          file_name = 'Knight-Battle-Game-README.pdf'
           try:
-              results = service.files().list(
+              # Read credentials
+              with open('credentials.json', 'r') as f:
+                  creds_info = json.load(f)
+              
+              folder_id = os.environ['FOLDER_ID']
+              
+              print(f"🔍 Using folder ID: {folder_id}")
+              print(f"📧 Service account: {creds_info['client_email']}")
+              
+              # Create credentials with full Drive scope
+              credentials = service_account.Credentials.from_service_account_info(
+                  creds_info, 
+                  scopes=['https://www.googleapis.com/auth/drive']
+              )
+              
+              # Build Drive service
+              service = build('drive', 'v3', credentials=credentials)
+              
+              # Test folder access
+              print(f"🔍 Testing folder access...")
+              try:
+                  folder_info = service.files().get(fileId=folder_id, fields='id,name,parents,permissions').execute()
+                  print(f"✅ Folder found: '{folder_info.get('name')}'")
+                  print(f"📁 Folder ID: {folder_info.get('id')}")
+              except HttpError as e:
+                  print(f"❌ Cannot access folder: {e}")
+                  if e.resp.status == 404:
+                      print("💡 Folder not found - check the folder ID")
+                  elif e.resp.status == 403:
+                      print("💡 No permission to folder - check sharing settings")
+                  raise
+              
+              # List current contents
+              print(f"📋 Current folder contents:")
+              try:
+                  results = service.files().list(
+                      q=f"parents in '{folder_id}'",
+                      fields="files(id, name, mimeType)"
+                  ).execute()
+                  files = results.get('files', [])
+                  for file in files:
+                      print(f"   📄 {file['name']} ({file['mimeType']})")
+                  if not files:
+                      print("   (empty folder)")
+              except Exception as e:
+                  print(f"⚠️  Cannot list folder contents: {e}")
+              
+              # Check if our PDF already exists
+              file_name = 'Knight-Battle-Game-README.pdf'
+              existing_files = service.files().list(
                   q=f"name='{file_name}' and parents in '{folder_id}'",
                   fields="files(id, name)"
-              ).execute()
-              files = results.get('files', [])
-              for file in files:
+              ).execute().get('files', [])
+              
+              for file in existing_files:
+                  print(f"🗑️  Deleting existing file: {file['name']}")
                   service.files().delete(fileId=file['id']).execute()
-                  print(f"🗑️  Deleted existing file: {file['name']}")
+              
+              # Upload new file
+              print(f"📤 Uploading new PDF...")
+              file_metadata = {
+                  'name': file_name,
+                  'parents': [folder_id]
+              }
+              media = MediaFileUpload('README.pdf', mimetype='application/pdf')
+              
+              file = service.files().create(
+                  body=file_metadata,
+                  media_body=media,
+                  fields='id,name,parents,webViewLink'
+              ).execute()
+              
+              print(f"🎉 SUCCESS! File uploaded to Google Drive!")
+              print(f"📄 File name: {file.get('name')}")
+              print(f"🆔 File ID: {file.get('id')}")
+              print(f"🔗 View link: {file.get('webViewLink')}")
+              
           except Exception as e:
-              print(f"ℹ️  No existing file to delete: {e}")
-          
-          # Upload new file
-          file_metadata = {
-              'name': file_name,
-              'parents': [folder_id]
-          }
-          media = MediaFileUpload('README.pdf', mimetype='application/pdf')
-          
-          file = service.files().create(
-              body=file_metadata,
-              media_body=media,
-              fields='id'
-          ).execute()
-          
-          print(f"✅ File uploaded successfully!")
-          print(f"📄 File name: {file_name}")
-          print(f"🆔 File ID: {file.get('id')}")
-          print(f"📁 Uploaded to folder: {folder_id}")
+              print(f"❌ Upload failed: {str(e)}")
+              import traceback
+              traceback.print_exc()
+              raise
           EOF
           
           python upload_to_drive.py
       
       - name: Cleanup
         run: rm -f credentials.json
-      
-      - name: Upload PDF as Artifact (backup)
-        uses: actions/upload-artifact@v4
-        with:
-          name: README-PDF
-          path: README.pdf
