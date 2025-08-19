@@ -1,34 +1,23 @@
 name: Generate README PDF
-
 on:
   push:
     paths:
-      - 'README.md'
+      - README.md
   workflow_dispatch:
 
 jobs:
-  generate-pdf:
+  convert:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Install pandoc
-        run: sudo apt-get update && sudo apt-get install -y pandoc
-      
       - name: Convert README to PDF
-        run: pandoc README.md -o README.pdf --pdf-engine=wkhtmltopdf
-      
-      - name: Install wkhtmltopdf
-        run: sudo apt-get install -y wkhtmltopdf
-      
-      - name: Convert README to PDF (retry)
-        run: pandoc README.md -o README.pdf
+        uses: baileyjm02/markdown-to-pdf@v1
+        with:
+          input_path: README.md
+          output_dir: .
+          build_html: false
       
       - name: Upload PDF
         uses: actions/upload-artifact@v4
