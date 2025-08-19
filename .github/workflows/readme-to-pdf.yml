@@ -17,94 +17,35 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install dependencies
-        run: |
-          npm install -g md-to-pdf
-          pip install google-api-python-client google-auth
+      - name: Install md-to-pdf
+        run: npm install -g md-to-pdf
       
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
-      - name: Create credentials file
-        run: |
-          echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}' > credentials.json
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
       
-      - name: Upload to Google Drive with Domain Delegation
+      - name: Create Release with PDF
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: readme-pdf-${{ steps.date.outputs.date }}
+          name: "📄 README PDF - ${{ steps.date.outputs.date }}"
+          body: |
+            🤖 **Auto-generated README PDF**
+            
+            📅 Generated: ${{ steps.date.outputs.date }}
+            📱 **For tablet use**: Download the PDF below
+            
+            ✅ Click on `README.pdf` below to download
+          files: README.pdf
+          prerelease: false
         env:
-          FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
-          DELEGATED_USER: ${{ secrets.GOOGLE_DELEGATED_USER }}
-        run: |
-          cat > upload_to_drive.py << 'EOF'
-          import os
-          import json
-          from googleapiclient.discovery import build
-          from googleapiclient.http import MediaFileUpload
-          from google.oauth2 import service_account
-          
-          try:
-              # Read credentials
-              with open('credentials.json', 'r') as f:
-                  creds_info = json.load(f)
-              
-              folder_id = os.environ['FOLDER_ID']
-              delegated_user = os.environ.get('DELEGATED_USER')
-              
-              print(f"🔍 Using folder ID: {folder_id}")
-              print(f"📧 Service account: {creds_info['client_email']}")
-              print(f"👤 Delegated user: {delegated_user}")
-              
-              # Create credentials with domain delegation
-              credentials = service_account.Credentials.from_service_account_info(
-                  creds_info, 
-                  scopes=['https://www.googleapis.com/auth/drive']
-              )
-              
-              # Delegate to user account
-              if delegated_user:
-                  credentials = credentials.with_subject(delegated_user)
-                  print(f"✅ Using delegated credentials for: {delegated_user}")
-              
-              # Build Drive service
-              service = build('drive', 'v3', credentials=credentials)
-              
-              # Check if file exists and delete it
-              file_name = 'Knight-Battle-Game-README.pdf'
-              results = service.files().list(
-                  q=f"name='{file_name}' and parents in '{folder_id}'",
-                  fields="files(id, name)"
-              ).execute()
-              files = results.get('files', [])
-              for file in files:
-                  print(f"🗑️  Deleting existing file: {file['name']}")
-                  service.files().delete(fileId=file['id']).execute()
-              
-              # Upload new file
-              print(f"📤 Uploading new PDF...")
-              file_metadata = {
-                  'name': file_name,
-                  'parents': [folder_id]
-              }
-              media = MediaFileUpload('README.pdf', mimetype='application/pdf')
-              
-              file = service.files().create(
-                  body=file_metadata,
-                  media_body=media,
-                  fields='id,name,webViewLink'
-              ).execute()
-              
-              print(f"🎉 SUCCESS! File uploaded to Google Drive!")
-              print(f"📄 File name: {file.get('name')}")
-              print(f"🆔 File ID: {file.get('id')}")
-              print(f"🔗 View link: {file.get('webViewLink')}")
-              
-          except Exception as e:
-              print(f"❌ Upload failed: {str(e)}")
-              import traceback
-              traceback.print_exc()
-              raise
-          EOF
-          
-          python upload_to_drive.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Cleanup
-        run: rm -f credentials.json
+      - name: Upload PDF as Artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: README-PDF-${{ steps.date.outputs.date }}
+          path: README.pdf
