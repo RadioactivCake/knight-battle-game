@@ -24,16 +24,10 @@ jobs:
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
       - name: Upload to Google Drive
-        uses: adityak74/google-drive-upload-git-action@main
+        uses: satackey/action-google-drive@v1
         with:
-          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          filename: "README.pdf"
-          folderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
-          name: "Knight-Battle-Game-README.pdf"
-          overwrite: "true"
-      
-      - name: Upload PDF as Artifact (backup)
-        uses: actions/upload-artifact@v4
-        with:
-          name: README-PDF
-          path: README.pdf
+          skicka-tokencache-json: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          upload-from: README.pdf
+          upload-to: /Knight-Battle-Game-README.pdf
+          google-client-id: ${{ secrets.GOOGLE_CLIENT_ID }}
+          google-client-secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
