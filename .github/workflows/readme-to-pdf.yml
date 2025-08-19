@@ -25,9 +25,12 @@ jobs:
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
+      - name: Create credentials file
+        run: |
+          echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}' > credentials.json
+      
       - name: Upload to Google Drive
         env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           cat > upload_to_drive.py << 'EOF'
@@ -37,12 +40,13 @@ jobs:
           from googleapiclient.http import MediaFileUpload
           from google.oauth2 import service_account
           
-          # Get credentials from environment
-          creds_json = os.environ['GOOGLE_CREDENTIALS']
+          # Read credentials from file
+          with open('credentials.json', 'r') as f:
+              creds_info = json.load(f)
+          
           folder_id = os.environ['FOLDER_ID']
           
-          # Parse credentials
-          creds_info = json.loads(creds_json)
+          # Create credentials
           credentials = service_account.Credentials.from_service_account_info(
               creds_info, 
               scopes=['https://www.googleapis.com/auth/drive.file']
@@ -61,9 +65,9 @@ jobs:
               files = results.get('files', [])
               for file in files:
                   service.files().delete(fileId=file['id']).execute()
-                  print(f"Deleted existing file: {file['name']}")
+                  print(f"🗑️  Deleted existing file: {file['name']}")
           except Exception as e:
-              print(f"No existing file to delete: {e}")
+              print(f"ℹ️  No existing file to delete: {e}")
           
           # Upload new file
           file_metadata = {
@@ -79,11 +83,15 @@ jobs:
           ).execute()
           
           print(f"✅ File uploaded successfully!")
-          print(f"File ID: {file.get('id')}")
-          print(f"File name: {file_name}")
+          print(f"📄 File name: {file_name}")
+          print(f"🆔 File ID: {file.get('id')}")
+          print(f"📁 Uploaded to folder: {folder_id}")
           EOF
           
           python upload_to_drive.py
+      
+      - name: Cleanup
+        run: rm -f credentials.json
       
       - name: Upload PDF as Artifact (backup)
         uses: actions/upload-artifact@v4
