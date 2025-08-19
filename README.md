@@ -3,7 +3,53 @@
 ## 📋 Project Overview
 - **Platform**: Android (Java)
 - **Type**: Turn-based RPG with collection mechanics
-- **Current Status**: Fully functional with knight collection, battle system, chest opening, squire mechanics, event system, dual squire support, and enhanced animations
+- **Current Status**: Fully functional with knight collection, battle system, chest opening, squire mechanics, event system, dual squire support, enhanced animations, and automated documentation
+
+---
+
+## 📄 README PDF Automation
+
+### Automated PDF Generation and Cloud Sync
+
+The project includes **fully automated README-to-PDF conversion** with cloud synchronization for tablet annotation workflows.
+
+#### 🤖 How It Works
+
+1. **README.md updated** → Automatically triggers GitHub Action
+2. **PDF generated** using `md-to-pdf` with proper formatting  
+3. **PDF uploaded to Dropbox** → Overwrites previous version (no duplicates)
+4. **PDF appears on tablet** → Ready for annotation via Dropbox app
+
+#### ⚙️ Technical Implementation
+
+**GitHub Workflow**: `.github/workflows/readme-to-pdf.yml`
+- **Trigger**: `on.push.paths: README.md` - Only runs when README changes
+- **PDF Engine**: `md-to-pdf` with headless Chrome rendering
+- **Cloud Upload**: Dropbox API with overwrite mode for single-file management
+- **Runtime**: ~2-3 minutes per conversion
+- **Cost**: Free (within GitHub Actions and Dropbox free tiers)
+
+#### 📱 Tablet Workflow
+
+- ✅ **Edit README** → PDF automatically updates in Dropbox
+- ✅ **Open Dropbox on tablet** → Latest PDF ready for annotation  
+- ✅ **No manual uploads** → Complete automation
+- ✅ **No duplicate files** → Always overwrites same file (`Knight-Battle-Game-README.pdf`)
+
+#### 🔧 Setup Requirements
+
+- **Dropbox App** with API token configured as GitHub secret
+- **GitHub Actions permissions**: `contents: write`
+- **One-time setup** → Ongoing automation
+
+#### 🚧 Implementation Challenges Overcome
+
+- **PDF Generation**: Multiple converter failures resolved with `md-to-pdf`
+- **Google Drive API**: Service account storage quota restrictions led to Dropbox adoption
+- **YAML Syntax**: JSON formatting in workflow files required careful escaping
+- **Action Dependencies**: Non-existent GitHub marketplace actions replaced with direct API calls
+
+This automation eliminates manual PDF generation while providing seamless access to the latest documentation for mobile review and annotation.
 
 ---
 
@@ -466,5 +512,5 @@ private String findCorrectKnightName(String oldName) {
 
 ---
 
-*Last Updated: Fixed Hebrew RTL layout issue, added enemy animation system, fixed mass evolution bug, implemented attack spam prevention, and improved character positioning*
-*Status: Fully functional game with comprehensive animation system, robust anti-cheat measures, and consistent cross-language layout compatibility - ready for advanced feature development and global deployment*
+*Last Updated: Added automated README-to-PDF generation with Dropbox sync, fixed Hebrew RTL layout issue, added enemy animation system, fixed mass evolution bug, implemented attack spam prevention, and improved character positioning*
+*Status: Fully functional game with comprehensive animation system, robust anti-cheat measures, consistent cross-language layout compatibility, and automated documentation pipeline - ready for advanced feature development and global deployment*
