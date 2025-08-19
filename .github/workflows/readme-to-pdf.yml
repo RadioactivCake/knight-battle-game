@@ -24,11 +24,17 @@ jobs:
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
       - name: Upload to Dropbox
-        uses: Creepios/dropbox-action@v1.0
-        with:
-          token: ${{ secrets.DROPBOX_TOKEN }}
-          localPath: README.pdf
-          remotePath: /Knight-Battle-Game-README.pdf
+        env:
+          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+        run: |
+          # Upload using Dropbox API directly
+          curl -X POST https://content.dropboxapi.com/2/files/upload \
+            --header "Authorization: Bearer $DROPBOX_TOKEN" \
+            --header "Dropbox-API-Arg: {\"path\": \"/Knight-Battle-Game-README.pdf\", \"mode\": \"overwrite\", \"autorename\": false}" \
+            --header "Content-Type: application/octet-stream" \
+            --data-binary @README.pdf
+          
+          echo "✅ PDF uploaded to Dropbox successfully!"
       
       - name: Upload PDF as Artifact (backup)
         uses: actions/upload-artifact@v4
