@@ -23,9 +23,9 @@ jobs:
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
-      - name: Upload PDF as Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload to Google Drive
+        uses: willo32/google-drive-upload@v1
         with:
-          name: README-PDF
-          path: README.pdf
-          retention-days: 90
+          target: README.pdf
+          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          parent_folder_id: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
