@@ -21,7 +21,7 @@ jobs:
         run: npm install -g md-to-pdf
       
       - name: Convert to PDF
-        run: md-to-pdf README.md --launch-options '{"args": ["--no-sandbox"]}'
+        run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
       - name: Upload to Google Drive
         uses: adityak74/google-drive-upload-git-action@main
