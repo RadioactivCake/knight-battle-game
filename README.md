@@ -1,5 +1,4 @@
 # Knight Battle Game - Project Documentation
-
 ## 📋 Project Overview
 - **Platform**: Android (Java)
 - **Type**: Turn-based RPG with collection mechanics
