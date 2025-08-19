@@ -5,10 +5,6 @@ on:
       - README.md
   workflow_dispatch:
 
-permissions:
-  contents: write
-  packages: write
-
 jobs:
   convert:
     runs-on: ubuntu-latest
@@ -27,31 +23,15 @@ jobs:
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
-      
-      - name: Create Release with PDF
-        uses: softprops/action-gh-release@v2
+      - name: Upload to Dropbox
+        uses: Creepios/dropbox-action@v1.0
         with:
-          tag_name: readme-pdf-${{ steps.date.outputs.date }}
-          name: "📄 README PDF - ${{ steps.date.outputs.date }}"
-          body: |
-            🤖 **Auto-generated README PDF**
-            
-            📅 Generated: ${{ steps.date.outputs.date }}
-            📱 **For tablet use**: Download the PDF below
-            
-            ✅ Click on `README.pdf` below to download
-          files: README.pdf
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DROPBOX_TOKEN }}
+          localPath: README.pdf
+          remotePath: /Knight-Battle-Game-README.pdf
       
       - name: Upload PDF as Artifact (backup)
         uses: actions/upload-artifact@v4
         with:
-          name: README-PDF-${{ steps.date.outputs.date }}
+          name: README-PDF
           path: README.pdf
-          retention-days: 90
