@@ -11,6 +11,7 @@ public class Knight {
     private String imageName;
     private boolean isEquipped;
     private int quantity;
+    private Trait currentTrait;
 
     // Constructor now takes knight ID and loads data from database
     public Knight(String knightId) {
@@ -31,6 +32,7 @@ public class Knight {
         this.imageName = "player_character"; // Default image
         this.isEquipped = false;
         this.quantity = 1;
+        this.currentTrait = null; // ADD THIS LINE
     }
 
     // Legacy constructor for backwards compatibility
@@ -42,6 +44,7 @@ public class Knight {
         this.imageName = imageName;
         this.isEquipped = false;
         this.quantity = 1;
+        this.currentTrait = null; // ADD THIS LINE
     }
 
     // Getters
@@ -59,17 +62,6 @@ public class Knight {
 
     public int getBaseAttack() {
         return baseAttack;
-    }
-
-    // Getters for buffed stats (with duplicate bonus)
-    public int getMaxHealth() {
-        int buffPercentage = (quantity - 1) * 10; // 10% per duplicate
-        return baseMaxHealth + (baseMaxHealth * buffPercentage / 100);
-    }
-
-    public int getAttack() {
-        int buffPercentage = (quantity - 1) * 10; // 10% per duplicate
-        return baseAttack + (baseAttack * buffPercentage / 100);
     }
 
     public String getImageName() {
@@ -154,6 +146,79 @@ public class Knight {
         LIFE_STEAL,
         SCALING_ATTACK,
         DOUBLE_ATTACK
+    }
+
+    public void setTrait(Trait trait) {
+        this.currentTrait = trait;
+    }
+
+    public Trait getTrait() {
+        return currentTrait;
+    }
+
+    public boolean hasTrait() {
+        return currentTrait != null;
+    }
+
+    public int getMaxHealth() {
+        // Start with base HP
+        int hp = baseMaxHealth;
+
+        // Apply duplicate buff first
+        int buffPercentage = (quantity - 1) * 10; // 10% per duplicate
+        hp = hp + (hp * buffPercentage / 100);
+
+        // Apply trait bonus second (if exists)
+        if (currentTrait != null) {
+            hp = currentTrait.applyHpBonus(hp);
+        }
+
+        return hp;
+    }
+
+    public int getAttack() {
+        // Start with base attack
+        int attack = baseAttack;
+
+        // Apply duplicate buff first
+        int buffPercentage = (quantity - 1) * 10; // 10% per duplicate
+        attack = attack + (attack * buffPercentage / 100);
+
+        // Apply trait bonus second (if exists)
+        if (currentTrait != null) {
+            attack = currentTrait.applyAttackBonus(attack);
+        }
+
+        return attack;
+    }
+
+    // Method to get stats breakdown for detailed display
+    public String getStatsBreakdown() {
+        StringBuilder breakdown = new StringBuilder();
+
+        // Base stats
+        breakdown.append("Base: ").append(baseMaxHealth).append(" HP, ").append(baseAttack).append(" ATK\n");
+
+        // Duplicate bonus
+        int duplicates = quantity - 1;
+        if (duplicates > 0) {
+            int dupHp = baseMaxHealth + (baseMaxHealth * duplicates * 10 / 100);
+            int dupAttack = baseAttack + (baseAttack * duplicates * 10 / 100);
+            breakdown.append("With Duplicates (+").append(duplicates * 10).append("%): ")
+                    .append(dupHp).append(" HP, ").append(dupAttack).append(" ATK\n");
+        }
+
+        // Trait bonus
+        if (currentTrait != null) {
+            breakdown.append("Trait: ").append(currentTrait.getDisplayString()).append("\n");
+            breakdown.append("Final Stats: ").append(getMaxHealth()).append(" HP, ").append(getAttack()).append(" ATK");
+        } else {
+            if (duplicates > 0) {
+                breakdown.append("Final Stats: ").append(getMaxHealth()).append(" HP, ").append(getAttack()).append(" ATK");
+            }
+        }
+
+        return breakdown.toString();
     }
 
 }

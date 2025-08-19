@@ -1042,41 +1042,46 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private Knight loadKnightForBattle(String knightName) {
+        Knight knight = null;
+
         if (knightName.equals("Axolotl Knight")) {
             // Load from database with quantity for buff calculation
-            Knight knight = new Knight("brave_knight");
+            knight = new Knight("brave_knight");
             int quantity = sharedPreferences.getInt("Axolotl Knight_quantity", 1);
             knight.setQuantity(quantity);
-            return knight;
         } else if (knightName.startsWith("Evolved ")) {
             // Evolved knights have saved stats
             int savedHp = sharedPreferences.getInt(knightName + "_hp", 200);
             int savedAttack = sharedPreferences.getInt(knightName + "_attack", 40);
             int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
 
-            Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
+            knight = new Knight(knightName, savedHp, savedAttack, "player_character");
             knight.setQuantity(quantity);
-            return knight;
         } else {
             // Try to load from database first
             KnightDatabase.KnightData data = KnightDatabase.getKnightDataByName(knightName);
 
             if (data != null) {
-                Knight knight = new Knight(data.id);
+                knight = new Knight(data.id);
                 int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
                 knight.setQuantity(quantity);
-                return knight;
             } else {
                 // Legacy knight
                 int baseHp = sharedPreferences.getInt(knightName + "_hp", 100);
                 int baseAttack = sharedPreferences.getInt(knightName + "_attack", 20);
                 int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
 
-                Knight knight = new Knight(knightName, baseHp, baseAttack, "player_character");
+                knight = new Knight(knightName, baseHp, baseAttack, "player_character");
                 knight.setQuantity(quantity);
-                return knight;
             }
         }
+
+        // IMPORTANT: Load trait for the knight (NEW)
+        if (knight != null) {
+            loadKnightTrait(knight);
+        }
+
+        return knight;
     }
 
     private void applyAllSquirePassives(String squire1Name, String squire2Name) {
@@ -1111,40 +1116,6 @@ public class GameActivity extends AppCompatActivity {
         player.getPassiveManager().debugLogPassives();
     }
 
-    private void debugFinalPlayerStats() {
-        android.util.Log.d("BattleStats", "=== FINAL BATTLE STATS ===");
-        android.util.Log.d("BattleStats", "Player HP: " + player.getCurrentHealth() + "/" + player.getMaxHealth());
-        android.util.Log.d("BattleStats", "Player Attack: " + player.getAttack());
-
-        // Show breakdown of bonuses
-        PassiveManager pm = player.getPassiveManager();
-        if (pm.getCombinedHPBoost() > 0) {
-            android.util.Log.d("BattleStats", "HP Boost: +" + (pm.getCombinedHPBoost() * 100) + "%");
-        }
-        if (pm.getCombinedAttackBoost() > 0) {
-            android.util.Log.d("BattleStats", "Attack Boost: +" + (pm.getCombinedAttackBoost() * 100) + "%");
-        }
-        if (pm.getCombinedDamageResistance() > 0) {
-            android.util.Log.d("BattleStats", "Damage Resistance: " + (pm.getCombinedDamageResistance() * 100) + "%");
-        }
-        if (pm.getCombinedCriticalHit() > 0) {
-            android.util.Log.d("BattleStats", "Critical Hit Chance: " + (pm.getCombinedCriticalHit() * 100) + "%");
-        }
-        if (pm.getCombinedEvasion() > 0) {
-            android.util.Log.d("BattleStats", "Evasion Chance: " + (pm.getCombinedEvasion() * 100) + "%");
-        }
-        if (pm.getCombinedLifeSteal() > 0) {
-            android.util.Log.d("BattleStats", "Life Steal: " + (pm.getCombinedLifeSteal() * 100) + "%");
-        }
-        if (pm.getCombinedDoubleAttack() > 0) {
-            android.util.Log.d("BattleStats", "Double Attack Chance: " + (pm.getCombinedDoubleAttack() * 100) + "%");
-        }
-        if (pm.getScalingAttack() > 0) {
-            android.util.Log.d("BattleStats", "Scaling Attack: +" + (pm.getScalingAttack() * 100) + "% per 10% health lost");
-        }
-
-        android.util.Log.d("BattleStats", "=== END BATTLE STATS ===");
-    }
 
     // Add this method to handle the toggle:
     private void togglePassiveDisplay() {
@@ -1299,6 +1270,61 @@ public class GameActivity extends AppCompatActivity {
             android.util.Log.d("AttackSpam", "Buttons NOT enabled - isPlayerTurn:" + isPlayerTurn +
                     " gameOver:" + gameOver + " playerAnimating:" + isPlayerAnimating);
         }
+    }
+    private void loadKnightTrait(Knight knight) {
+        String traitName = sharedPreferences.getString(knight.getName() + "_trait", "");
+        if (!traitName.isEmpty()) {
+            Trait trait = TraitDatabase.getTraitByName(traitName);
+            if (trait != null) {
+                knight.setTrait(trait);
+                android.util.Log.d("BattleSystem", "Loaded trait for fighter " + knight.getName() + ": " + trait.getDisplayString());
+            }
+        }
+    }
+
+    private void debugFinalPlayerStats() {
+        android.util.Log.d("BattleStats", "=== FINAL BATTLE STATS ===");
+        android.util.Log.d("BattleStats", "Player HP: " + player.getCurrentHealth() + "/" + player.getMaxHealth());
+        android.util.Log.d("BattleStats", "Player Attack: " + player.getAttack());
+
+        // Show trait bonus if fighter has one
+        String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
+        String traitName = sharedPreferences.getString(equippedKnight + "_trait", "");
+        if (!traitName.isEmpty()) {
+            Trait trait = TraitDatabase.getTraitByName(traitName);
+            if (trait != null) {
+                android.util.Log.d("BattleStats", "Fighter Trait: " + trait.getDisplayString());
+            }
+        }
+
+        // Show breakdown of passive bonuses (existing code)
+        PassiveManager pm = player.getPassiveManager();
+        if (pm.getCombinedHPBoost() > 0) {
+            android.util.Log.d("BattleStats", "HP Boost (Passives): +" + (pm.getCombinedHPBoost() * 100) + "%");
+        }
+        if (pm.getCombinedAttackBoost() > 0) {
+            android.util.Log.d("BattleStats", "Attack Boost (Passives): +" + (pm.getCombinedAttackBoost() * 100) + "%");
+        }
+        if (pm.getCombinedDamageResistance() > 0) {
+            android.util.Log.d("BattleStats", "Damage Resistance: " + (pm.getCombinedDamageResistance() * 100) + "%");
+        }
+        if (pm.getCombinedCriticalHit() > 0) {
+            android.util.Log.d("BattleStats", "Critical Hit Chance: " + (pm.getCombinedCriticalHit() * 100) + "%");
+        }
+        if (pm.getCombinedEvasion() > 0) {
+            android.util.Log.d("BattleStats", "Evasion Chance: " + (pm.getCombinedEvasion() * 100) + "%");
+        }
+        if (pm.getCombinedLifeSteal() > 0) {
+            android.util.Log.d("BattleStats", "Life Steal: " + (pm.getCombinedLifeSteal() * 100) + "%");
+        }
+        if (pm.getCombinedDoubleAttack() > 0) {
+            android.util.Log.d("BattleStats", "Double Attack Chance: " + (pm.getCombinedDoubleAttack() * 100) + "%");
+        }
+        if (pm.getScalingAttack() > 0) {
+            android.util.Log.d("BattleStats", "Scaling Attack: +" + (pm.getScalingAttack() * 100) + "% per 10% health lost");
+        }
+
+        android.util.Log.d("BattleStats", "=== END BATTLE STATS ===");
     }
 
 

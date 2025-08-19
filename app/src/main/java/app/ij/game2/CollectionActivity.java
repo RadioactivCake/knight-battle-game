@@ -122,6 +122,7 @@ public class CollectionActivity extends AppCompatActivity {
                 Knight adminKnight = new AdminKnight("King's Guard", 1000, 1000, "player_character");
                 adminKnight.setEquipped(equippedKnight.equals(adminKnight.getName()));
                 adminKnight.setQuantity(1); // Always quantity 1
+                loadKnightTrait(adminKnight); // ADD THIS
                 allKnights.add(adminKnight);
             } else if (knightName.startsWith("Evolved ")) {
                 // Evolved knights have saved stats, not database stats
@@ -132,6 +133,7 @@ public class CollectionActivity extends AppCompatActivity {
                 Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
                 knight.setEquipped(equippedKnight.equals(knight.getName()));
                 knight.setQuantity(quantity);
+                loadKnightTrait(knight); // ADD THIS
                 allKnights.add(knight);
             } else {
                 // Try to load from database first
@@ -150,6 +152,7 @@ public class CollectionActivity extends AppCompatActivity {
 
                 knight.setEquipped(equippedKnight.equals(knight.getName()));
                 knight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
+                loadKnightTrait(knight); // ADD THIS
                 allKnights.add(knight);
             }
         }
@@ -237,7 +240,7 @@ public class CollectionActivity extends AppCompatActivity {
         knightImage.setLayoutParams(imageParams);
         knightImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
 
-        // Use the new knight image system
+        // Use the knight image system
         int knightImageResource = KnightImageUtils.getKnightIdleImage(this, knight.getName());
         knightImage.setImageResource(knightImageResource);
 
@@ -253,17 +256,14 @@ public class CollectionActivity extends AppCompatActivity {
         nameText.setTextColor(getResources().getColor(android.R.color.white));
         nameText.setTypeface(null, android.graphics.Typeface.BOLD);
 
-        // Knight stats (show buffed stats)
+        // Knight stats (show final stats with all bonuses)
         TextView statsText = new TextView(this);
         String statsString = "HP: " + knight.getMaxHealth() + " | ATK: " + knight.getAttack();
-        if (knight.getBuffPercentage() > 0) {
-            statsString += " (+" + knight.getBuffPercentage() + "%)";
-        }
         statsText.setText(statsString);
         statsText.setTextSize(14);
         statsText.setTextColor(getResources().getColor(android.R.color.white));
 
-        // Knight quantity (show duplicates instead of total owned)
+        // Knight quantity (show duplicates)
         TextView quantityText = new TextView(this);
         int duplicates = knight.getQuantity() - 1;
         String quantityString = "Duplicates: " + duplicates;
@@ -284,6 +284,18 @@ public class CollectionActivity extends AppCompatActivity {
         passiveText.setAlpha(0.9f);
         passiveText.setMaxLines(2);
 
+        // Trait display (NEW)
+        TextView traitText = new TextView(this);
+        if (knight.hasTrait()) {
+            traitText.setText("✨ " + knight.getTrait().getDisplayString());
+            traitText.setTextColor(knight.getTrait().getRarityColor());
+        } else {
+            traitText.setText("✨ No Trait");
+            traitText.setTextColor(getResources().getColor(android.R.color.white));
+            traitText.setAlpha(0.6f);
+        }
+        traitText.setTextSize(10);
+        traitText.setTypeface(null, android.graphics.Typeface.BOLD);
 
         // Equipped status
         TextView statusText = new TextView(this);
@@ -308,14 +320,22 @@ public class CollectionActivity extends AppCompatActivity {
         infoContainer.addView(statsText);
         infoContainer.addView(quantityText);
         infoContainer.addView(passiveText);
+        infoContainer.addView(traitText); // NEW
         infoContainer.addView(statusText);
 
         knightCard.addView(knightImage);
         knightCard.addView(infoContainer);
 
-        // Check if knight can evolve
+        // Button container for evolve and trait buttons
+        LinearLayout buttonContainer = new LinearLayout(this);
+        buttonContainer.setOrientation(LinearLayout.VERTICAL);
+        buttonContainer.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        // Evolve button (existing logic)
         if (knight.getQuantity() >= 11 && !knight.getName().startsWith("Evolved ") && !knight.getName().equals("King's Guard")) {
-            // Add evolve button
             Button evolveButton = new Button(this);
             evolveButton.setText("EVOLVE");
             evolveButton.setTextSize(12);
@@ -325,7 +345,7 @@ public class CollectionActivity extends AppCompatActivity {
             evolveButton.setPadding(12, 12, 12, 12);
 
             LinearLayout.LayoutParams evolveParams = new LinearLayout.LayoutParams(180, 70);
-            evolveParams.setMargins(15, 10, 0, 10);
+            evolveParams.setMargins(15, 10, 0, 5);
             evolveButton.setLayoutParams(evolveParams);
 
             evolveButton.setOnClickListener(new View.OnClickListener() {
@@ -335,14 +355,51 @@ public class CollectionActivity extends AppCompatActivity {
                 }
             });
 
-            knightCard.addView(evolveButton);
+            buttonContainer.addView(evolveButton);
+        }
+
+        // Trait button (NEW) - Available for all knights except King's Guard
+        if (!knight.getName().equals("King's Guard")) {
+            Button traitButton = new Button(this);
+            traitButton.setText("ROLL TRAIT\n(100 coins)");
+            traitButton.setTextSize(10);
+            traitButton.setTypeface(null, android.graphics.Typeface.BOLD);
+            traitButton.setTextColor(getResources().getColor(android.R.color.white));
+            traitButton.setBackgroundResource(R.drawable.attack_button_style);
+            traitButton.setPadding(8, 8, 8, 8);
+
+            LinearLayout.LayoutParams traitParams = new LinearLayout.LayoutParams(180, 100); // Increased height from 60 to 70
+            traitParams.setMargins(15, 5, 0, 10);
+            traitButton.setLayoutParams(traitParams);
+
+            // Check if player has enough coins
+            int currentCoins = sharedPreferences.getInt("coins", 0);
+            if (currentCoins < 100) {
+                traitButton.setEnabled(false);
+                traitButton.setText("ROLL TRAIT\n(100 coins)");
+                traitButton.setAlpha(0.5f);
+            }
+
+            traitButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showTraitRollDialog(knight);
+                }
+            });
+
+            buttonContainer.addView(traitButton);
+        }
+
+        // Add button container to main card
+        if (buttonContainer.getChildCount() > 0) {
+            knightCard.addView(buttonContainer);
         }
 
         // Click listener for knight details
         knightCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showKnightDetails(knight); // This will now work
+                showKnightDetails(knight);
             }
         });
 
@@ -726,27 +783,10 @@ public class CollectionActivity extends AppCompatActivity {
 
 
     private void showKnightDetails(Knight knight) {
-        String message = "Name: " + knight.getName() + "\n";
+        String message = "Name: " + knight.getName() + "\n\n";
 
-        int duplicates = knight.getQuantity() - 1;
-
-        if (knight.getBuffPercentage() > 0) {
-            message += "Base Stats:\n" +
-                    "  Health: " + knight.getBaseMaxHealth() + "\n" +
-                    "  Attack: " + knight.getBaseAttack() + "\n\n" +
-                    "Buffed Stats (+" + knight.getBuffPercentage() + "%):\n" +
-                    "  Health: " + knight.getMaxHealth() + "\n" +
-                    "  Attack: " + knight.getAttack() + "\n\n";
-        } else {
-            message += "Health: " + knight.getMaxHealth() + "\n" +
-                    "Attack: " + knight.getAttack() + "\n\n";
-        }
-
-        message += "Duplicates: " + duplicates;
-        if (knight.getQuantity() >= 11) {
-            message += " (MAX - 100% buff!)";
-        }
-        message += "\n\n";
+        // Show detailed stats breakdown
+        message += knight.getStatsBreakdown() + "\n\n";
 
         // Add passive effect info
         Knight.PassiveEffect passive = knight.getPassiveEffect();
@@ -773,21 +813,19 @@ public class CollectionActivity extends AppCompatActivity {
         builder.setTitle("Knight Details");
         builder.setMessage(message);
 
-        // Add buttons based on current status and King's Blessing
+        // Add equipment buttons (existing logic)
         if (!knight.getName().equals(equippedKnightName)) {
             builder.setPositiveButton("Equip as Fighter", (dialog, which) -> {
                 equipKnight(knight);
             });
         }
 
-        // First squire slot
         if (!knight.getName().equals(equippedSquire) && !knight.getName().equals(equippedKnightName)) {
             builder.setNeutralButton("Equip as Squire", (dialog, which) -> {
                 equipSquire(knight);
             });
         }
 
-        // Second squire slot (only if King's Blessing is unlocked)
         if (hasKingsBlessing && !knight.getName().equals(equippedSquire2) &&
                 !knight.getName().equals(equippedKnightName) && !knight.getName().equals(equippedSquire)) {
 
@@ -796,7 +834,6 @@ public class CollectionActivity extends AppCompatActivity {
             });
         }
 
-        // If no equipment options available, just show close button
         if (knight.getName().equals(equippedKnightName) ||
                 (!hasKingsBlessing && (knight.getName().equals(equippedSquire))) ||
                 (hasKingsBlessing && knight.getName().equals(equippedSquire) && knight.getName().equals(equippedSquire2))) {
@@ -830,5 +867,94 @@ public class CollectionActivity extends AppCompatActivity {
 
         // Refresh display
         displayKnights();
+    }
+
+    private void showTraitRollDialog(Knight knight) {
+        int currentCoins = sharedPreferences.getInt("coins", 0);
+
+        if (currentCoins < 100) {
+            Toast.makeText(this, "Not enough coins! You need 100 coins to roll for a trait.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String message = "Roll for a trait for " + knight.getName() + "?\n\n" +
+                "💰 Cost: 100 coins\n" +
+                "🎲 Chances:\n" +
+                "• Common (40%): Tough (+25% HP) or Flash (+25% ATK)\n" +
+                "• Rare (30%): Golem (+50% HP) or Blitz (+50% ATK)\n" +
+                "• Epic (20%): Expert (+50% HP and ATK)\n" +
+                "• Legendary (10%): Main Character (+100% HP and ATK)\n\n";
+
+        if (knight.hasTrait()) {
+            message += "⚠️ This will replace current trait: " + knight.getTrait().getDisplayString() + "\n\n";
+        }
+
+        message += "Trait bonuses apply after duplicate bonuses.";
+
+        new AlertDialog.Builder(this)
+                .setTitle("🎲 Roll for Trait")
+                .setMessage(message)
+                .setPositiveButton("Roll!", (dialog, which) -> {
+                    rollTraitForKnight(knight);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void rollTraitForKnight(Knight knight) {
+        // Deduct coins
+        int currentCoins = sharedPreferences.getInt("coins", 0);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("coins", currentCoins - 100);
+
+        // Roll for trait
+        Trait newTrait = TraitDatabase.rollRandomTrait();
+
+        // Save trait to knight
+        knight.setTrait(newTrait);
+        saveKnightTrait(knight.getName(), newTrait.getName());
+
+        // Apply changes
+        editor.apply();
+
+        // Show result
+        showTraitRollResult(knight, newTrait);
+
+        // Refresh display
+        loadKnights();
+        displayKnights();
+    }
+
+    private void showTraitRollResult(Knight knight, Trait trait) {
+        String message = "🎉 Trait Rolled! 🎉\n\n" +
+                "Knight: " + knight.getName() + "\n" +
+                "New Trait: " + trait.getDisplayString() + "\n\n" +
+                "Updated Stats:\n" +
+                knight.getStatsBreakdown();
+
+        new AlertDialog.Builder(this)
+                .setTitle("✨ New Trait Acquired!")
+                .setMessage(message)
+                .setPositiveButton("Awesome!", null)
+                .show();
+    }
+
+    private void saveKnightTrait(String knightName, String traitName) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(knightName + "_trait", traitName);
+        editor.apply();
+
+        android.util.Log.d("TraitSystem", "Saved trait for " + knightName + ": " + traitName);
+    }
+
+    private void loadKnightTrait(Knight knight) {
+        String traitName = sharedPreferences.getString(knight.getName() + "_trait", "");
+        if (!traitName.isEmpty()) {
+            Trait trait = TraitDatabase.getTraitByName(traitName);
+            if (trait != null) {
+                knight.setTrait(trait);
+                android.util.Log.d("TraitSystem", "Loaded trait for " + knight.getName() + ": " + traitName);
+            }
+        }
     }
 }

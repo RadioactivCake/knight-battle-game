@@ -46,7 +46,7 @@ public class EventDatabase {
         } else {
             // TEMPORARY FOR TESTING: 50% chance for King's Blessing, 50% for Life Tree
             Random random = new Random();
-            if (random.nextInt(100) < 1) { // CHANGE BACK TO 1 WHEN DONE TESTING
+            if (random.nextInt(100) < 10) { // CHANGE BACK TO 10 WHEN DONE TESTING
                 return getEventByName("King's Blessing");
             } else {
                 return getEventByName("Life Tree");
