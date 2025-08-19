@@ -12,12 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Convert README to PDF
-        uses: baileyjm02/markdown-to-pdf@v1
+      - name: Convert Markdown to PDF
+        uses: docker://pandoc/latex:latest
         with:
-          input_path: README.md
-          output_dir: .
-          build_html: false
+          args: >-
+            --output=README.pdf
+            --pdf-engine=xelatex
+            --variable=geometry:margin=1in
+            README.md
       
       - name: Upload PDF
         uses: actions/upload-artifact@v4
