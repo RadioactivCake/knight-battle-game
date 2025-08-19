@@ -17,48 +17,45 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install md-to-pdf
-        run: npm install -g md-to-pdf
+      - name: Install dependencies
+        run: |
+          npm install -g md-to-pdf
+          pip install google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2
       
       - name: Convert to PDF
         run: md-to-pdf README.md --launch-options '{"args":["--no-sandbox"]}'
       
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          service_account_key: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
-      
       - name: Upload to Google Drive
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
-          gcloud auth activate-service-account --key-file <(echo '${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}')
-          pip install google-api-python-client google-auth
-          python3 << 'EOF'
+          cat > upload_to_drive.py << 'EOF'
           import os
+          import json
           from googleapiclient.discovery import build
           from googleapiclient.http import MediaFileUpload
           from google.oauth2 import service_account
-          import json
           
-          # Load credentials
-          creds_json = '''${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}'''
+          # Get credentials from environment
+          creds_json = os.environ['GOOGLE_CREDENTIALS']
+          folder_id = os.environ['FOLDER_ID']
+          
+          # Parse credentials
           creds_info = json.loads(creds_json)
-          credentials = service_account.Credentials.from_service_account_info(creds_info)
+          credentials = service_account.Credentials.from_service_account_info(
+              creds_info, 
+              scopes=['https://www.googleapis.com/auth/drive.file']
+          )
           
           # Build Drive service
           service = build('drive', 'v3', credentials=credentials)
           
-          # Upload file
-          file_metadata = {
-              'name': 'Knight-Battle-Game-README.pdf',
-              'parents': ['${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}']
-          }
-          media = MediaFileUpload('README.pdf', mimetype='application/pdf')
-          
           # Check if file exists and delete it
+          file_name = 'Knight-Battle-Game-README.pdf'
           try:
               results = service.files().list(
-                  q=f"name='Knight-Battle-Game-README.pdf' and parents in '${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}'",
+                  q=f"name='{file_name}' and parents in '{folder_id}'",
                   fields="files(id, name)"
               ).execute()
               files = results.get('files', [])
@@ -69,10 +66,27 @@ jobs:
               print(f"No existing file to delete: {e}")
           
           # Upload new file
+          file_metadata = {
+              'name': file_name,
+              'parents': [folder_id]
+          }
+          media = MediaFileUpload('README.pdf', mimetype='application/pdf')
+          
           file = service.files().create(
               body=file_metadata,
               media_body=media,
               fields='id'
           ).execute()
-          print(f"File uploaded successfully. File ID: {file.get('id')}")
+          
+          print(f"✅ File uploaded successfully!")
+          print(f"File ID: {file.get('id')}")
+          print(f"File name: {file_name}")
           EOF
+          
+          python upload_to_drive.py
+      
+      - name: Upload PDF as Artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: README-PDF
+          path: README.pdf
