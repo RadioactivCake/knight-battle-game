@@ -157,17 +157,22 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // Save to preferences with immediate commit
+        // NEW: Check for money cheat code
+        if (name.equals("money") && title.equals("Great")) {
+            activateMoneyCheat();
+            return;
+        }
+
+        // Regular save logic (existing code)
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("player_name", name);
         editor.putString("player_title", title);
 
-        // Use commit() instead of apply() to ensure immediate saving
         boolean saved = editor.commit();
 
         if (saved) {
             android.util.Log.d("ProfileSystem", "Profile saved: " + name + " the " + title);
-            finish(); // Return to main screen silently
+            finish();
         } else {
             Toast.makeText(this, "Failed to save profile!", Toast.LENGTH_SHORT).show();
         }
@@ -204,6 +209,34 @@ public class ProfileActivity extends AppCompatActivity {
             finish();
         } else {
             Toast.makeText(this, "Failed to activate cheat!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void activateMoneyCheat() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Change name from money to player (similar to admin cheat)
+        editor.putString("player_name", "Player");
+        editor.putString("player_title", "Great");
+
+        // Add 1000 coins to current total
+        int currentCoins = sharedPreferences.getInt("coins", 0);
+        int newCoinTotal = currentCoins + 1000;
+        editor.putInt("coins", newCoinTotal);
+
+        // Optional: Add a flag to track money cheat usage (for debugging)
+        int timesUsed = sharedPreferences.getInt("money_cheat_used", 0);
+        editor.putInt("money_cheat_used", timesUsed + 1);
+
+        boolean saved = editor.commit();
+
+        if (saved) {
+            Toast.makeText(this, "💰 Money cheat activated! +1000 coins!", Toast.LENGTH_LONG).show();
+            android.util.Log.d("MoneyCheat", "Added 1000 coins. New total: " + newCoinTotal +
+                    " (Used " + (timesUsed + 1) + " times)");
+            finish();
+        } else {
+            Toast.makeText(this, "Failed to activate money cheat!", Toast.LENGTH_SHORT).show();
         }
     }
 }

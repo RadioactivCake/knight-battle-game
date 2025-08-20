@@ -180,6 +180,15 @@
                     android:layout_marginBottom="4dp" />
 
                 <TextView
+                    android:id="@+id/enemyAttackText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ATK: 18"
+                    android:textSize="10sp"
+                    android:textColor="#FFD700"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
                     android:id="@+id/enemyHealthText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -187,6 +196,8 @@
                     android:textSize="10sp"
                     android:textColor="@android:color/white"
                     android:layout_marginBottom="4dp" />
+
+
 
                 <ProgressBar
                     android:id="@+id/enemyHealthBar"

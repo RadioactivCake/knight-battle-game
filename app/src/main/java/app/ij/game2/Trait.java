@@ -35,7 +35,10 @@ public class Trait {
 
     public int applyAttackBonus(int currentAttack) {
         if (name.equals("Lonely")) {
-            return currentAttack; // Lonely doesn't give stat bonuses, only passive effects
+            return currentAttack; // Lonely doesn't give stat bonuses
+        }
+        if (name.equals("Guru")) {
+            return 0; // Guru sets attack to 0
         }
         if (attackBonus > 0) {
             return (int)(currentAttack * (1.0f + attackBonus));
@@ -51,6 +54,8 @@ public class Trait {
 
         if (name.equals("Lonely")) {
             display.append(" - Applies own passive in battle");
+        } else if (name.equals("Guru")) {
+            display.append(" - Attack = 0, passive doubled");
         } else if (hpBonus > 0 && attackBonus > 0) {
             display.append(" - +").append((int)(hpBonus * 100)).append("% HP, +")
                     .append((int)(attackBonus * 100)).append("% ATK");

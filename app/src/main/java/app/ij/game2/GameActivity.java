@@ -24,7 +24,7 @@ import java.util.Random;
 public class GameActivity extends AppCompatActivity {
 
     // UI Elements
-    private TextView playerHealthText, enemyHealthText, enemyNameText, stageCounter, worldCounter, playerNameText, knightTypeText, squireText, surrenderButton;
+    private TextView playerHealthText, enemyHealthText, enemyNameText, enemyAttackText, stageCounter, worldCounter, playerNameText, knightTypeText, squireText, surrenderButton;
     private ProgressBar playerHealthBar, enemyHealthBar;
     private Button lightAttackButton, mediumAttackButton, heavyAttackButton;
     private ImageView playerCharacterImage, enemyCharacterImage;
@@ -106,6 +106,7 @@ public class GameActivity extends AppCompatActivity {
         enemyNameText = findViewById(R.id.enemyNameText);
         playerHealthBar = findViewById(R.id.playerHealthBar);
         enemyHealthBar = findViewById(R.id.enemyHealthBar);
+        enemyAttackText = findViewById(R.id.enemyAttackText); // NEW LINE
         lightAttackButton = findViewById(R.id.lightAttackButton);
         mediumAttackButton = findViewById(R.id.mediumAttackButton);
         heavyAttackButton = findViewById(R.id.heavyAttackButton);
@@ -308,20 +309,38 @@ public class GameActivity extends AppCompatActivity {
 
 
     private Knight loadSquireKnight(String squireName) {
-        if (squireName.equals("Brave Knight")) {
-            int quantity = sharedPreferences.getInt("Brave Knight_quantity", 1);
-            Knight knight = new Knight("Brave Knight", 100, 20, "player_character");
+        Knight knight = null;
+
+        if (squireName.equals("Axolotl Knight")) {
+            int quantity = sharedPreferences.getInt("Axolotl Knight_quantity", 1);
+            knight = new Knight("brave_knight");
             knight.setQuantity(quantity);
-            return knight;
+        } else if (squireName.startsWith("Evolved ")) {
+            // Evolved knights have saved stats
+            int savedHp = sharedPreferences.getInt(squireName + "_hp", 200);
+            int savedAttack = sharedPreferences.getInt(squireName + "_attack", 40);
+            int quantity = sharedPreferences.getInt(squireName + "_quantity", 1);
+
+            knight = new Knight(squireName, savedHp, savedAttack, "player_character");
+            knight.setQuantity(quantity);
         } else {
+            // Regular knights
             int baseHp = sharedPreferences.getInt(squireName + "_hp", 100);
             int baseAttack = sharedPreferences.getInt(squireName + "_attack", 20);
             int quantity = sharedPreferences.getInt(squireName + "_quantity", 1);
 
-            Knight knight = new Knight(squireName, baseHp, baseAttack, "player_character");
+            knight = new Knight(squireName, baseHp, baseAttack, "player_character");
             knight.setQuantity(quantity);
-            return knight;
         }
+
+        // Load trait for the squire knight
+        if (knight != null) {
+            loadKnightTrait(knight);
+            android.util.Log.d("SquireLoading", "Loaded squire " + squireName +
+                    (knight.hasTrait() ? " with trait: " + knight.getTrait().getName() : " with no trait"));
+        }
+
+        return knight;
     }
 
     private void createNewEnemy() {
@@ -382,6 +401,9 @@ public class GameActivity extends AppCompatActivity {
         // Update health text
         playerHealthText.setText(player.getCurrentHealth() + "/" + player.getMaxHealth());
         enemyHealthText.setText(enemy.getCurrentHealth() + "/" + enemy.getMaxHealth());
+
+        // NEW: Update enemy attack display
+        enemyAttackText.setText("ATK: " + enemy.getAttack());
 
         // Update health bars
         int playerHealthPercent = (player.getCurrentHealth() * 100) / player.getMaxHealth();
@@ -1091,7 +1113,18 @@ public class GameActivity extends AppCompatActivity {
         if (!squire1Name.isEmpty()) {
             Knight squire1 = loadSquireKnight(squire1Name);
             if (squire1 != null) {
+                // IMPORTANT: Load trait for squire
+                loadKnightTrait(squire1);
+
                 Knight.PassiveEffect passive1 = squire1.getPassiveEffect();
+
+                // Check if THIS squire has Guru trait - double their own passive effect
+                if (squire1.hasTrait() && squire1.getTrait().getName().equals("Guru")) {
+                    passive1 = createDoubledPassive(passive1);
+                    android.util.Log.d("PassiveSystem", "GURU SQUIRE: Doubled passive for " + squire1Name +
+                            " from " + (squire1.getPassiveEffect().getValue() * 100) + "% to " + (passive1.getValue() * 100) + "%");
+                }
+
                 player.addPassiveEffect(passive1);
                 android.util.Log.d("PassiveSystem", "Applied Squire 1 (" + squire1Name + "): " +
                         passive1.getName() + " = " + (passive1.getValue() * 100) + "% Type: " + passive1.getPassiveType());
@@ -1103,32 +1136,36 @@ public class GameActivity extends AppCompatActivity {
         if (hasKingsBlessing && !squire2Name.isEmpty()) {
             Knight squire2 = loadSquireKnight(squire2Name);
             if (squire2 != null) {
+                // IMPORTANT: Load trait for second squire too
+                loadKnightTrait(squire2);
+
                 Knight.PassiveEffect passive2 = squire2.getPassiveEffect();
+
+                // Check if THIS squire has Guru trait - double their own passive effect
+                if (squire2.hasTrait() && squire2.getTrait().getName().equals("Guru")) {
+                    passive2 = createDoubledPassive(passive2);
+                    android.util.Log.d("PassiveSystem", "GURU SQUIRE 2: Doubled passive for " + squire2Name +
+                            " from " + (squire2.getPassiveEffect().getValue() * 100) + "% to " + (passive2.getValue() * 100) + "%");
+                }
+
                 player.addPassiveEffect(passive2);
                 android.util.Log.d("PassiveSystem", "Applied Squire 2 (" + squire2Name + "): " +
                         passive2.getName() + " = " + (passive2.getValue() * 100) + "% Type: " + passive2.getPassiveType());
             }
         }
 
-        // NEW: Check if fighter has Lonely trait
+        // Fighter Lonely trait handling (existing code)
         String equippedKnightName = sharedPreferences.getString("equipped_knight", "Brave Knight");
         String fighterTraitName = sharedPreferences.getString(equippedKnightName + "_trait", "");
 
-        android.util.Log.d("PassiveSystem", "Fighter: " + equippedKnightName + ", Trait: '" + fighterTraitName + "'");
-
         if (fighterTraitName.equals("Lonely")) {
-            android.util.Log.d("PassiveSystem", "LONELY TRAIT DETECTED!");
             Knight fighter = loadKnightForBattle(equippedKnightName);
             if (fighter != null) {
                 Knight.PassiveEffect fighterPassive = fighter.getPassiveEffect();
                 player.addPassiveEffect(fighterPassive);
                 android.util.Log.d("PassiveSystem", "Applied Lonely Fighter Passive (" + equippedKnightName + "): " +
                         fighterPassive.getName() + " = " + (fighterPassive.getValue() * 100) + "% Type: " + fighterPassive.getPassiveType());
-            } else {
-                android.util.Log.d("PassiveSystem", "ERROR: Could not load fighter for Lonely trait!");
             }
-        } else {
-            android.util.Log.d("PassiveSystem", "No Lonely trait detected.");
         }
 
         // Debug all combined effects
@@ -1166,10 +1203,25 @@ public class GameActivity extends AppCompatActivity {
         boolean hasKingsBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
         boolean hasLonelyTrait = fighterTraitName.equals("Lonely");
 
-        // Count active squires
+        // Count active squires and check for Guru
         int activeSquires = 0;
-        if (!equippedSquire.isEmpty()) activeSquires++;
-        if (!equippedSquire2.isEmpty()) activeSquires++;
+        boolean hasGuruSquire = false;
+
+        if (!equippedSquire.isEmpty()) {
+            activeSquires++;
+            Knight squire1 = loadSquireKnight(equippedSquire);
+            if (squire1 != null && squire1.hasTrait() && squire1.getTrait().getName().equals("Guru")) {
+                hasGuruSquire = true;
+            }
+        }
+
+        if (!equippedSquire2.isEmpty()) {
+            activeSquires++;
+            Knight squire2 = loadSquireKnight(equippedSquire2);
+            if (squire2 != null && squire2.hasTrait() && squire2.getTrait().getName().equals("Guru")) {
+                hasGuruSquire = true;
+            }
+        }
 
         // Count total active passives (squires + lonely fighter)
         int totalPassives = activeSquires;
@@ -1181,6 +1233,11 @@ public class GameActivity extends AppCompatActivity {
             compactText.append("🛡️ ").append(totalPassives).append(" Passive");
             if (totalPassives > 1) compactText.append("s");
             compactText.append(" Active");
+
+            // Add Guru indicator
+            if (hasGuruSquire) {
+                compactText.append(" 🎭");
+            }
 
             // Show breakdown
             if (hasLonelyTrait && activeSquires > 0) {
@@ -1202,7 +1259,7 @@ public class GameActivity extends AppCompatActivity {
 
         squireText.setText(compactText.toString());
         squireText.setMaxLines(1);
-        squireText.setTextSize(8); // Compact size
+        squireText.setTextSize(8);
     }
 
     // Add method for detailed display (expanded state):
@@ -1220,7 +1277,7 @@ public class GameActivity extends AppCompatActivity {
         if (hasAdminKnight && equippedKnight.equals("King's Guard")) {
             detailedText.append("🛡️ ADMIN MODE\n   No squires needed\n\n🔒 SQUIRE SYSTEM BYPASSED\n   Admin knight is overpowered");
         } else {
-            // === FIGHTER PASSIVE SECTION (NEW) ===
+            // === FIGHTER PASSIVE SECTION ===
             if (hasLonelyTrait) {
                 Knight fighter = loadKnightForBattle(equippedKnight);
                 if (fighter != null) {
@@ -1237,7 +1294,22 @@ public class GameActivity extends AppCompatActivity {
                 if (squire != null) {
                     Knight.PassiveEffect passive = squire.getPassiveEffect();
                     detailedText.append("🛡️ SQUIRE: ").append(equippedSquire).append("\n");
-                    detailedText.append("   ").append(passive.getName()).append(" - ").append(passive.getDescription());
+
+                    // Check if this squire has Guru trait
+                    boolean squireHasGuru = squire.hasTrait() && squire.getTrait().getName().equals("Guru");
+
+                    if (squireHasGuru) {
+                        // Show original passive value and doubled value
+                        float originalValue = passive.getValue();
+                        float doubledValue = originalValue * 2.0f;
+
+                        detailedText.append("   ").append(passive.getName()).append(" - ");
+                        detailedText.append(passive.getDescription());
+                        detailedText.append("\n   🎭 GURU: ").append((int)(originalValue * 100)).append("% → ")
+                                .append((int)(doubledValue * 100)).append("% (DOUBLED!)");
+                    } else {
+                        detailedText.append("   ").append(passive.getName()).append(" - ").append(passive.getDescription());
+                    }
                 }
             } else {
                 detailedText.append("🛡️ SQUIRE: None Equipped\n");
@@ -1253,7 +1325,22 @@ public class GameActivity extends AppCompatActivity {
                     if (squire2 != null) {
                         Knight.PassiveEffect passive2 = squire2.getPassiveEffect();
                         detailedText.append("🛡️ 2ND SQUIRE: ").append(equippedSquire2).append("\n");
-                        detailedText.append("   ").append(passive2.getName()).append(" - ").append(passive2.getDescription());
+
+                        // Check if this squire has Guru trait
+                        boolean squire2HasGuru = squire2.hasTrait() && squire2.getTrait().getName().equals("Guru");
+
+                        if (squire2HasGuru) {
+                            // Show original passive value and doubled value
+                            float originalValue = passive2.getValue();
+                            float doubledValue = originalValue * 2.0f;
+
+                            detailedText.append("   ").append(passive2.getName()).append(" - ");
+                            detailedText.append(passive2.getDescription());
+                            detailedText.append("\n   🎭 GURU: ").append((int)(originalValue * 100)).append("% → ")
+                                    .append((int)(doubledValue * 100)).append("% (DOUBLED!)");
+                        } else {
+                            detailedText.append("   ").append(passive2.getName()).append(" - ").append(passive2.getDescription());
+                        }
                     }
                 } else {
                     detailedText.append("🛡️ 2ND SQUIRE: None Equipped\n");
@@ -1271,8 +1358,8 @@ public class GameActivity extends AppCompatActivity {
         }
 
         squireText.setText(detailedText.toString());
-        squireText.setMaxLines(10); // Increased from 8 to accommodate fighter passive
-        squireText.setTextSize(8); // Keep same text size for consistency
+        squireText.setMaxLines(12); // Increased to accommodate Guru info
+        squireText.setTextSize(8);
     }
 
     private void loadEnemyImages() {
@@ -1378,6 +1465,16 @@ public class GameActivity extends AppCompatActivity {
         }
 
         android.util.Log.d("BattleStats", "=== END BATTLE STATS ===");
+    }
+
+    private Knight.PassiveEffect createDoubledPassive(Knight.PassiveEffect originalPassive) {
+        return new Knight.PassiveEffect(
+                "Enhanced " + originalPassive.getName(),
+                originalPassive.getType(),
+                originalPassive.getDescription() + " (Doubled by Guru)",
+                originalPassive.getValue() * 2.0f, // Double the effect
+                originalPassive.getPassiveType()
+        );
     }
 
 

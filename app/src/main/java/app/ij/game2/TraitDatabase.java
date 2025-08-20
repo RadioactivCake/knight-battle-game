@@ -24,6 +24,7 @@ public class TraitDatabase {
 
         // LEGENDARY TRAITS (10% total chance)
         ALL_TRAITS.add(new Trait("Main Character", "+100% HP and ATK", "LEGENDARY", 1.0f, 1.0f));
+        ALL_TRAITS.add(new Trait("Guru", "Attack = 0, but passive effect doubled", "LEGENDARY", 0.0f, 0.0f));
     }
 
     // Roll for a random trait using chest-like probabilities
@@ -51,7 +52,7 @@ public class TraitDatabase {
         }
         else {
             // LEGENDARY (10% chance) - Main Character
-            return getAllTraits().get(6); // NOTE: Main Character moves to index 6
+            return random.nextBoolean() ? getAllTraits().get(6) : getAllTraits().get(7); // Guru is now index 7
         }
     }
 
