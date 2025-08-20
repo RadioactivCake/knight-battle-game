@@ -24,6 +24,9 @@ public class Trait {
 
     // Apply trait bonuses to base stats (after duplicates)
     public int applyHpBonus(int currentHp) {
+        if (name.equals("Lonely")) {
+            return currentHp; // Lonely doesn't give stat bonuses, only passive effects
+        }
         if (hpBonus > 0) {
             return (int)(currentHp * (1.0f + hpBonus));
         }
@@ -31,18 +34,24 @@ public class Trait {
     }
 
     public int applyAttackBonus(int currentAttack) {
+        if (name.equals("Lonely")) {
+            return currentAttack; // Lonely doesn't give stat bonuses, only passive effects
+        }
         if (attackBonus > 0) {
             return (int)(currentAttack * (1.0f + attackBonus));
         }
         return currentAttack;
     }
 
+
     // Get display string for UI
     public String getDisplayString() {
         StringBuilder display = new StringBuilder();
         display.append(name).append(" (").append(rarity).append(")");
 
-        if (hpBonus > 0 && attackBonus > 0) {
+        if (name.equals("Lonely")) {
+            display.append(" - Applies own passive in battle");
+        } else if (hpBonus > 0 && attackBonus > 0) {
             display.append(" - +").append((int)(hpBonus * 100)).append("% HP, +")
                     .append((int)(attackBonus * 100)).append("% ATK");
         } else if (hpBonus > 0) {

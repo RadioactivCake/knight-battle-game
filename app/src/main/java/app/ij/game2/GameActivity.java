@@ -1094,7 +1094,7 @@ public class GameActivity extends AppCompatActivity {
                 Knight.PassiveEffect passive1 = squire1.getPassiveEffect();
                 player.addPassiveEffect(passive1);
                 android.util.Log.d("PassiveSystem", "Applied Squire 1 (" + squire1Name + "): " +
-                        passive1.getName() + " = " + (passive1.getValue() * 100) + "%");
+                        passive1.getName() + " = " + (passive1.getValue() * 100) + "% Type: " + passive1.getPassiveType());
             }
         }
 
@@ -1106,10 +1106,29 @@ public class GameActivity extends AppCompatActivity {
                 Knight.PassiveEffect passive2 = squire2.getPassiveEffect();
                 player.addPassiveEffect(passive2);
                 android.util.Log.d("PassiveSystem", "Applied Squire 2 (" + squire2Name + "): " +
-                        passive2.getName() + " = " + (passive2.getValue() * 100) + "%");
+                        passive2.getName() + " = " + (passive2.getValue() * 100) + "% Type: " + passive2.getPassiveType());
             }
-        } else if (!hasKingsBlessing && !squire2Name.isEmpty()) {
-            android.util.Log.d("PassiveSystem", "King's Blessing not unlocked - ignoring Squire 2");
+        }
+
+        // NEW: Check if fighter has Lonely trait
+        String equippedKnightName = sharedPreferences.getString("equipped_knight", "Brave Knight");
+        String fighterTraitName = sharedPreferences.getString(equippedKnightName + "_trait", "");
+
+        android.util.Log.d("PassiveSystem", "Fighter: " + equippedKnightName + ", Trait: '" + fighterTraitName + "'");
+
+        if (fighterTraitName.equals("Lonely")) {
+            android.util.Log.d("PassiveSystem", "LONELY TRAIT DETECTED!");
+            Knight fighter = loadKnightForBattle(equippedKnightName);
+            if (fighter != null) {
+                Knight.PassiveEffect fighterPassive = fighter.getPassiveEffect();
+                player.addPassiveEffect(fighterPassive);
+                android.util.Log.d("PassiveSystem", "Applied Lonely Fighter Passive (" + equippedKnightName + "): " +
+                        fighterPassive.getName() + " = " + (fighterPassive.getValue() * 100) + "% Type: " + fighterPassive.getPassiveType());
+            } else {
+                android.util.Log.d("PassiveSystem", "ERROR: Could not load fighter for Lonely trait!");
+            }
+        } else {
+            android.util.Log.d("PassiveSystem", "No Lonely trait detected.");
         }
 
         // Debug all combined effects
@@ -1142,22 +1161,42 @@ public class GameActivity extends AppCompatActivity {
 
         String equippedSquire = sharedPreferences.getString("equipped_squire", "");
         String equippedSquire2 = sharedPreferences.getString("equipped_squire2", "");
+        String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
+        String fighterTraitName = sharedPreferences.getString(equippedKnight + "_trait", "");
         boolean hasKingsBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
+        boolean hasLonelyTrait = fighterTraitName.equals("Lonely");
 
         // Count active squires
         int activeSquires = 0;
         if (!equippedSquire.isEmpty()) activeSquires++;
         if (!equippedSquire2.isEmpty()) activeSquires++;
 
-        if (activeSquires == 0) {
+        // Count total active passives (squires + lonely fighter)
+        int totalPassives = activeSquires;
+        if (hasLonelyTrait) totalPassives++;
+
+        if (totalPassives == 0) {
             compactText.append("🛡️ No Squires (Tap to expand)");
         } else {
-            compactText.append("🛡️ ").append(activeSquires);
-            if (hasKingsBlessing) {
-                compactText.append("/2 Squires Active");
+            compactText.append("🛡️ ").append(totalPassives).append(" Passive");
+            if (totalPassives > 1) compactText.append("s");
+            compactText.append(" Active");
+
+            // Show breakdown
+            if (hasLonelyTrait && activeSquires > 0) {
+                compactText.append(" (").append(activeSquires).append(" squire");
+                if (activeSquires > 1) compactText.append("s");
+                compactText.append(" + fighter)");
+            } else if (hasLonelyTrait) {
+                compactText.append(" (fighter only)");
             } else {
-                compactText.append("/1 Squire Active");
+                if (hasKingsBlessing) {
+                    compactText.append(" (").append(activeSquires).append("/2 squires)");
+                } else {
+                    compactText.append(" (").append(activeSquires).append("/1 squire)");
+                }
             }
+
             compactText.append(" (Tap to expand)");
         }
 
@@ -1172,12 +1211,26 @@ public class GameActivity extends AppCompatActivity {
 
         String equippedSquire = sharedPreferences.getString("equipped_squire", "");
         String equippedSquire2 = sharedPreferences.getString("equipped_squire2", "");
+        String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
+        String fighterTraitName = sharedPreferences.getString(equippedKnight + "_trait", "");
         boolean hasKingsBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
         boolean hasAdminKnight = sharedPreferences.getBoolean("has_admin_knight", false);
+        boolean hasLonelyTrait = fighterTraitName.equals("Lonely");
 
-        if (hasAdminKnight && currentKnightName.equals("King's Guard")) {
+        if (hasAdminKnight && equippedKnight.equals("King's Guard")) {
             detailedText.append("🛡️ ADMIN MODE\n   No squires needed\n\n🔒 SQUIRE SYSTEM BYPASSED\n   Admin knight is overpowered");
         } else {
+            // === FIGHTER PASSIVE SECTION (NEW) ===
+            if (hasLonelyTrait) {
+                Knight fighter = loadKnightForBattle(equippedKnight);
+                if (fighter != null) {
+                    Knight.PassiveEffect fighterPassive = fighter.getPassiveEffect();
+                    detailedText.append("⚔️ FIGHTER: ").append(equippedKnight).append(" ✨\n");
+                    detailedText.append("   ").append(fighterPassive.getName()).append(" - ").append(fighterPassive.getDescription());
+                    detailedText.append("\n   (Lonely trait effect)\n\n");
+                }
+            }
+
             // === FIRST SQUIRE SECTION ===
             if (!equippedSquire.isEmpty()) {
                 Knight squire = loadSquireKnight(equippedSquire);
@@ -1218,7 +1271,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         squireText.setText(detailedText.toString());
-        squireText.setMaxLines(8); // Expanded size
+        squireText.setMaxLines(10); // Increased from 8 to accommodate fighter passive
         squireText.setTextSize(8); // Keep same text size for consistency
     }
 

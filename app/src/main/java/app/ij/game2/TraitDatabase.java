@@ -18,6 +18,8 @@ public class TraitDatabase {
         ALL_TRAITS.add(new Trait("Blitz", "+50% ATK", "RARE", 0.0f, 0.50f));
 
         // EPIC TRAITS (20% total chance)
+        // Add to TraitDatabase.java static block
+        ALL_TRAITS.add(new Trait("Lonely", "Applies own passive to self in battle", "EPIC", 0.0f, 0.0f));
         ALL_TRAITS.add(new Trait("Expert", "+50% HP and ATK", "EPIC", 0.50f, 0.50f));
 
         // LEGENDARY TRAITS (10% total chance)
@@ -44,12 +46,12 @@ public class TraitDatabase {
             return random.nextBoolean() ? getAllTraits().get(2) : getAllTraits().get(3);
         }
         else if (chance < 90) {
-            // EPIC (20% chance) - Expert
-            return getAllTraits().get(4);
+            // EPIC (20% chance) - Pick randomly from Expert or Lonely
+            return random.nextBoolean() ? getAllTraits().get(4) : getAllTraits().get(5);
         }
         else {
             // LEGENDARY (10% chance) - Main Character
-            return getAllTraits().get(5);
+            return getAllTraits().get(6); // NOTE: Main Character moves to index 6
         }
     }
 
