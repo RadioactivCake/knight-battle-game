@@ -124,6 +124,11 @@ This automation eliminates manual PDF generation while providing seamless access
 - **Enhanced Animations**: Both player and enemy attack animations with proper timing
 - **Enemy Stunning**: Light attacks can stun enemies, causing them to skip their turn
 - **Attack Spam Prevention**: Buttons disabled during animations and enemy turns to prevent exploitation
+- **Enemy Attack Display**: Shows enemy's attack stat on their health card for strategic planning
+- **Enhanced Passive Display**: 
+  - Compact view shows Guru indicator (🎭) when active
+  - Detailed view shows original → doubled passive values for Guru traits
+  - Lonely trait effects clearly labeled in fighter section
 
 ### 5. Chest System
 - **Cost**: 5 coins per chest, 45 coins for 10x (10% discount)
@@ -231,8 +236,8 @@ disableAttackButtons(); // Immediate disable
 **Trait Categories**:
 - **Common (40% chance)**: Tough (+25% HP), Flash (+25% ATK)
 - **Rare (30% chance)**: Golem (+50% HP), Blitz (+50% ATK)
-- **Epic (20% chance)**: Expert (+50% HP and ATK)
-- **Legendary (10% chance)**: Main Character (+100% HP and ATK)
+- **Epic (20% chance)**: Lonely (applies own passive in battle), Expert (+50% HP and ATK)
+- **Legendary (10% chance)**: Main Character (+100% HP and ATK), Guru (attack = 0, passive doubled)
 
 **UI Integration**:
 - **"ROLL TRAIT" button** on each knight card in collection
@@ -312,6 +317,26 @@ KNIGHT_DATA.put("divine_warrior", new KnightData(
 - Evolution requires 11 copies (10 duplicates) of the base knight
 - Evolved knights start fresh with quantity 1 and can collect duplicates again
 
+### 11. Advanced Trait Mechanics (NEW)
+**Specialized traits that fundamentally change knight behavior and create unique strategic opportunities.**
+
+**Lonely Trait (Epic)**:
+- **Effect**: Fighter applies their own passive effect in battle
+- **Strategic Use**: Transforms fighters into self-supporting units
+- **Example**: Axolotl Knight with Lonely trait gains 15% HP boost while fighting
+- **Synergy**: Works alongside squire passives for triple-stacking effects
+
+**Guru Trait (Legendary)**:
+- **Effect**: Sets knight's attack to 0, but doubles their passive effect when used as squire
+- **Risk/Reward**: Ultimate support specialization at cost of combat ability
+- **Example**: Fire Paladin with Guru gives 50% attack boost (doubled from 25%) as squire
+- **Strategic Impact**: Enables pure support builds and maximizes passive effects
+- **Battle Integration**: Guru squires show "🎭 GURU: 25% → 50% (DOUBLED!)" in passive display
+
+**Trait Interaction Matrix**:
+- **Fighter with Lonely + Guru Squire**: Fighter gets own passive + doubled squire passive
+- **Dual Guru Squires**: Both passives doubled, but zero attack contribution from squires
+- **Mixed Builds**: Standard squires provide attack damage, Guru squires provide massive support
 ---
 
 ## 🎨 Image System
@@ -450,13 +475,50 @@ private String findCorrectKnightName(String oldName) {
 
 ---
 
+## 🎯 Strategic Meta Evolution
+
+### **New Build Archetypes**:
+
+**Pure Support Build**:
+- Fighter: Any knight with strong base stats
+- Squires: Dual Guru knights with powerful passives
+- Result: Massive passive effects (60% damage resistance, 70% crit chance, etc.)
+
+**Self-Reliant Build**: 
+- Fighter: Lonely trait knight with useful passive
+- Squires: Standard knights for additional effects
+- Result: Triple-stacked passive effects on fighter
+
+**Hybrid Optimization**:
+- Fighter: Lonely trait for self-passive
+- Squire 1: Guru trait for doubled support  
+- Squire 2: Standard knight for damage contribution
+- Result: Balanced offense and support maximization
+
+### **Economic Considerations**:
+- **Trait Rolling**: 100 coins per attempt encourages strategic investment
+- **Guru Trade-off**: Zero attack contribution requires careful team composition
+- **Lonely Synergy**: Makes previously overlooked fighter passives viable
+
+---
+
 ## 🎮 Admin Features
 
-### Admin Cheat (ProfileActivity.java)
-- **Trigger**: Name "admin" + Title "Mighty"
+### Admin Cheat Codes (ProfileActivity.java)
+**Two cheat codes available for testing and development:**
+
+#### King's Guard Cheat
+- **Trigger**: Name "admin" + Title "Mighty"  
 - **Effect**: Temporary "King's Guard" with 1000 HP/Attack and 99% damage resistance
-- **Auto-cleanup**: Removed on app restart
+- **Duration**: Until app restart (auto-cleanup in MainActivity)
 - **Special Handling**: Bypasses normal squire passive system
+
+#### Money Cheat  
+- **Trigger**: Name "money" + Title "Great"
+- **Effect**: Instantly adds 1000 coins to current total
+- **Usage**: Can be used multiple times, additive effect
+- **Tracking**: Logs usage count for debugging purposes
+- **Persistence**: Coins are permanent (not removed on restart)
 
 ---
 
@@ -483,17 +545,16 @@ private String findCorrectKnightName(String oldName) {
 - Attack spam prevention system
 
 ### 🔄 Recent Updates:
-- **ADDED Trait System** - Individual knight enhancement with 6 trait types and 100 coin rolling cost
+- **ADDED Advanced Trait Mechanics** - Lonely (fighter self-passive) and Guru (doubled squire passive) traits
+- **ENHANCED Battle UI** - Enemy attack display and detailed Guru passive indicators  
+- **ADDED Money Cheat Code** - "money + Great" combination for +1000 coins testing
+- **IMPROVED Passive Visualization** - Clear indicators for trait-enhanced effects in battle
+- **FIXED Guru Trait Implementation** - Proper passive doubling for squires with comprehensive logging
+- **ENHANCED UI Feedback** - Visual indicators (🎭) for active Guru traits in compact view
+- **ADDED Trait System** - Individual knight enhancement with 7 trait types and 100 coin rolling cost
 - **UPDATED King's Blessing Event** - Increased chance from 1% to 10% for better dual squire accessibility
 - **ENHANCED Collection UI** - Added trait display and roll buttons to knight cards
 - **IMPROVED Battle Integration** - Fighter trait bonuses automatically apply to combat stats
-- **FIXED mass evolution bug** - All knights now properly evolve when using bulk evolution
-- **ADDED enemy attack animations** - Enemies now animate when attacking using `enemy_idle.png` and `enemy_attack.png`
-- **FIXED attack spam exploit** - Players can no longer spam attack buttons to cheat
-- **IMPROVED enemy positioning** - Enemy size reduced to 300x350dp and repositioned higher
-- **ENHANCED animation system** - Both player and enemy have complete animation cycles
-- **ADDED button state management** - Intelligent enabling/disabling during battle phases
-- **IMPROVED visual balance** - Better character sizing and positioning for cleaner battle UI
 
 ---
 
