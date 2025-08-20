@@ -260,6 +260,26 @@ public int getMaxHealth() {
     return hp;
 }
 ```
+### 11. Advanced Trait Mechanics (NEW)
+**Specialized traits that fundamentally change knight behavior and create unique strategic opportunities.**
+
+**Lonely Trait (Epic)**:
+- **Effect**: Fighter applies their own passive effect in battle
+- **Strategic Use**: Transforms fighters into self-supporting units
+- **Example**: Axolotl Knight with Lonely trait gains 15% HP boost while fighting
+- **Synergy**: Works alongside squire passives for triple-stacking effects
+
+**Guru Trait (Legendary)**:
+- **Effect**: Sets knight's attack to 0, but doubles their passive effect when used as squire
+- **Risk/Reward**: Ultimate support specialization at cost of combat ability
+- **Example**: Fire Paladin with Guru gives 50% attack boost (doubled from 25%) as squire
+- **Strategic Impact**: Enables pure support builds and maximizes passive effects
+- **Battle Integration**: Guru squires show "🎭 GURU: 25% → 50% (DOUBLED!)" in passive display
+
+**Trait Interaction Matrix**:
+- **Fighter with Lonely + Guru Squire**: Fighter gets own passive + doubled squire passive
+- **Dual Guru Squires**: Both passives doubled, but zero attack contribution from squires
+- **Mixed Builds**: Standard squires provide attack damage, Guru squires provide massive support
 
 **Battle Integration**:
 
@@ -316,27 +336,6 @@ KNIGHT_DATA.put("divine_warrior", new KnightData(
 - Evolved knights get 1.5x to 2x stronger passive abilities
 - Evolution requires 11 copies (10 duplicates) of the base knight
 - Evolved knights start fresh with quantity 1 and can collect duplicates again
-
-### 11. Advanced Trait Mechanics (NEW)
-**Specialized traits that fundamentally change knight behavior and create unique strategic opportunities.**
-
-**Lonely Trait (Epic)**:
-- **Effect**: Fighter applies their own passive effect in battle
-- **Strategic Use**: Transforms fighters into self-supporting units
-- **Example**: Axolotl Knight with Lonely trait gains 15% HP boost while fighting
-- **Synergy**: Works alongside squire passives for triple-stacking effects
-
-**Guru Trait (Legendary)**:
-- **Effect**: Sets knight's attack to 0, but doubles their passive effect when used as squire
-- **Risk/Reward**: Ultimate support specialization at cost of combat ability
-- **Example**: Fire Paladin with Guru gives 50% attack boost (doubled from 25%) as squire
-- **Strategic Impact**: Enables pure support builds and maximizes passive effects
-- **Battle Integration**: Guru squires show "🎭 GURU: 25% → 50% (DOUBLED!)" in passive display
-
-**Trait Interaction Matrix**:
-- **Fighter with Lonely + Guru Squire**: Fighter gets own passive + doubled squire passive
-- **Dual Guru Squires**: Both passives doubled, but zero attack contribution from squires
-- **Mixed Builds**: Standard squires provide attack damage, Guru squires provide massive support
 ---
 
 ## 🎨 Image System
