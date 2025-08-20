@@ -58,18 +58,19 @@ This automation eliminates manual PDF generation while providing seamless access
 ### Core Classes
 1. **MainActivity** - Main menu and app entry point
 2. **GameActivity** - Battle system and combat with enhanced animations
-3. **CollectionActivity** - Knight collection management
+3. **CollectionActivity** - Knight collection management with trait system
 4. **ChestActivity** - Chest opening and knight acquisition
 5. **ProfileActivity** - Player profile and settings
 6. **Character** - Battle character with stats and passives
-7. **Knight** - Knight data model with database integration
+7. **Knight** - Knight data model with database integration and trait support
 8. **KnightDatabase** - Centralized knight data storage
 9. **KnightImageUtils** - Knight image loading system
 10. **PassiveManager** - Handles multiple passive effect combinations
 11. **EventActivity** - Event display screen
 12. **Event** - Event data model
 13. **EventDatabase** - Event management and probability
-
+14. **Trait** - Individual knight enhancement data model
+15. **TraitDatabase** - Trait data storage and rolling system
 ---
 
 ## ⚔️ Game Systems
@@ -148,7 +149,7 @@ This automation eliminates manual PDF generation while providing seamless access
 
 2. **King's Blessing** 
    - **Effect**: Unlocks second squire slot permanently
-   - **Rarity**: Legendary (1% base chance, 50% for testing)
+   - **Rarity**: Legendary (10% chance)
    - **Description**: "The ancient king grants you the power to command two squires in battle!"
    - **Persistent**: Once unlocked, stays unlocked forever
 
@@ -216,6 +217,58 @@ disableAttackButtons(); // Immediate disable
 - **Smart Sizing**: Uses `minLines="1"` for compact, `maxLines="8"` for expanded
 - **Visual Indicators**: Clear hints about tap functionality and current state
 
+
+### 10. Trait System (NEW)
+**Individual knight enhancement system that provides permanent stat bonuses independent of equipment roles.**
+
+**Core Mechanics**:
+- **Individual Enhancement**: Traits apply directly to specific knights, not as passive effects
+- **Collection Requirement**: Must own the knight to roll for their trait
+- **Cost**: 100 coins per trait roll
+- **Replacement System**: Rolling again replaces existing trait
+- **Stat Application Order**: Base stats → Duplicate bonuses → Trait bonuses → Battle passives
+
+**Trait Categories**:
+- **Common (40% chance)**: Tough (+25% HP), Flash (+25% ATK)
+- **Rare (30% chance)**: Golem (+50% HP), Blitz (+50% ATK)
+- **Epic (20% chance)**: Expert (+50% HP and ATK)
+- **Legendary (10% chance)**: Main Character (+100% HP and ATK)
+
+**UI Integration**:
+- **"ROLL TRAIT" button** on each knight card in collection
+- **Trait display** shows current trait with rarity-colored text
+- **Cost validation** disables button when insufficient coins
+- **Confirmation dialog** with full trait information and replacement warning
+- **Result feedback** shows new trait and updated stats breakdown
+
+**Technical Implementation**:
+```java
+// Trait application in Knight.java
+public int getMaxHealth() {
+    int hp = baseMaxHealth;
+    // Apply duplicate buffs first
+    hp += (hp * (quantity - 1) * 10 / 100);
+    // Apply trait bonus second
+    if (currentTrait != null) {
+        hp = currentTrait.applyHpBonus(hp);
+    }
+    return hp;
+}
+```
+
+**Battle Integration**:
+
+- Fighter bonuses: Equipped fighter's trait bonuses apply to battle stats
+- Collection display: All knights show final stats regardless of equipment status
+- Persistence: Traits save/load automatically with SharedPreferences storage
+- Debug logging: Comprehensive trait application tracking in battle system
+
+**Balancing Features**:
+
+- 100 coin cost prevents excessive rerolling
+- Same rarity distribution as chest system maintains consistency
+- Exponential power scaling from +25% (common) to +100% (legendary)
+- Post-duplicate application ensures traits scale with knight progression
 ---
 
 ## 🗃️ Database Structure
@@ -430,6 +483,10 @@ private String findCorrectKnightName(String oldName) {
 - Attack spam prevention system
 
 ### 🔄 Recent Updates:
+- **ADDED Trait System** - Individual knight enhancement with 6 trait types and 100 coin rolling cost
+- **UPDATED King's Blessing Event** - Increased chance from 1% to 10% for better dual squire accessibility
+- **ENHANCED Collection UI** - Added trait display and roll buttons to knight cards
+- **IMPROVED Battle Integration** - Fighter trait bonuses automatically apply to combat stats
 - **FIXED mass evolution bug** - All knights now properly evolve when using bulk evolution
 - **ADDED enemy attack animations** - Enemies now animate when attacking using `enemy_idle.png` and `enemy_attack.png`
 - **FIXED attack spam exploit** - Players can no longer spam attack buttons to cheat
@@ -512,5 +569,5 @@ private String findCorrectKnightName(String oldName) {
 
 ---
 
-*Last Updated: Added automated README-to-PDF generation with Dropbox sync, fixed Hebrew RTL layout issue, added enemy animation system, fixed mass evolution bug, implemented attack spam prevention, and improved character positioning*
-*Status: Fully functional game with comprehensive animation system, robust anti-cheat measures, consistent cross-language layout compatibility, and automated documentation pipeline - ready for advanced feature development and global deployment*
+*Last Updated: Added Trait System with individual knight enhancement mechanics, increased King's Blessing event accessibility, implemented comprehensive trait UI with rolling system, integrated trait bonuses into battle calculations, enhanced collection management with persistent trait storage, and automated documentation pipeline*
+*Status: Fully functional game with comprehensive animation system, robust anti-cheat measures, individual knight trait progression, dual squire system, automated documentation pipeline, and consistent cross-language layout compatibility - ready for advanced feature development and global deployment*
