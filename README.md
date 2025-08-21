@@ -114,6 +114,14 @@ This automation eliminates manual PDF generation while providing seamless access
 - Comprehensive logging for debugging passive interactions
 - Recalculates stats when passives are added or removed
 
+**Passive Caps for Balance**:
+- **Damage Resistance**: 95% maximum (prevents invincibility while maintaining tankiness)
+- **Evasion**: 90% maximum (strong dodge chance but still hittable)
+- **Critical Hit**: 100% maximum (every attack can crit but no overflow)
+- **Life Steal**: 100% maximum (heal for full damage dealt)
+- **Double Attack**: 90% maximum (most attacks double but not all)
+- **No Caps**: HP Boost, Attack Boost, Scaling Attack (self-balancing)
+
 ### 4. Battle System
 - **3 Attack Types**:
   - Light: 50% damage + 50% stun chance
@@ -143,29 +151,31 @@ This automation eliminates manual PDF generation while providing seamless access
 **Random events occur after completing stages to add variety and strategic elements to progression.**
 
 **Event Mechanics**:
-- **No events after stage 1**
-- **Stage 2+**: Progressive chance - 20% → 40% → 60% for stages 2-4
+- **Event Progression**: 20% after stage 1 → 40% after stage 2 → 60% after stage 3 → 80% after stage 4
 - **After mini boss (stage 5+)**: 100% chance for Life Tree
-- **King's Blessing**: Special unlock event (currently 50% chance for testing)
+- **King's Blessing**: 10% chance at all stages (before and after unlock)
 
 **Current Events**:
 1. **Life Tree**
    - **Effect**: Restores all lost health to full
-   - **Rarity**: Common (99% chance when event triggers)
+   - **Appearance**: Black background with white text (mystical theme)
+   - **Frequency**: 90% of events
    - **Description**: "A mystical tree restores all your lost health!"
 
 2. **King's Blessing** 
-   - **Effect**: Unlocks second squire slot permanently
-   - **Rarity**: Legendary (10% chance)
-   - **Description**: "The ancient king grants you the power to command two squires in battle!"
-   - **Persistent**: Once unlocked, stays unlocked forever
+   - **Effect**: 
+     - **First time**: Unlocks second squire slot permanently
+     - **Already unlocked**: Awards 100 coins bonus
+   - **Appearance**: Gold background with black text (royal theme)
+   - **Frequency**: 10% of events
+   - **Description**: "The ancient king grants you his blessing! (Unlocks dual squires OR +100 coins if already unlocked)"
+   - **Persistent Value**: Remains useful throughout entire game progression
 
 **Technical Implementation**:
-- Events check in `GameActivity.checkBattleResult()` after stage completion
-- Event effects applied immediately before showing event screen
-- King's Blessing saves unlock status to SharedPreferences
-- Player returns to battle after pressing continue
-- Smart event selection prevents duplicate King's Blessing
+- Events start earlier (stage 1) with progressive frequency scaling
+- King's Blessing provides ongoing value after initial unlock
+- Dynamic event appearance based on event type
+- Smart event selection prevents wasted King's Blessing events
 
 ### 7. Enhanced Animation System
 **Complete character animation system for both player and enemy with cinematic battle experience.**
@@ -474,6 +484,17 @@ private String findCorrectKnightName(String oldName) {
 **Problem**: Only player had attack animations
 **Solution**: Implemented complete enemy animation system with `enemy_idle.png` and `enemy_attack.png`
 
+### 7. PassiveManager Missing Bug (FIXED)
+**Problem**: Game referenced PassiveManager but class didn't exist, breaking dual squire passive stacking
+**Solution**: Created comprehensive PassiveManager.java with proper stacking logic and balance caps
+
+### 8. Damage Reduction Not Working (FIXED)  
+**Problem**: Damage resistance passives weren't reducing incoming damage
+**Solution**: Fixed takeDamage() method to properly apply PassiveManager resistance calculations
+
+### 9. Event Appearance Issues (FIXED)
+**Problem**: King's Blessing event had poor contrast with dark text on dark background
+**Solution**: Implemented dynamic event backgrounds (gold for King's Blessing, black for Life Tree)
 ---
 
 ## 🎯 Strategic Meta Evolution
@@ -546,16 +567,12 @@ private String findCorrectKnightName(String oldName) {
 - Attack spam prevention system
 
 ### 🔄 Recent Updates:
-- **ADDED Advanced Trait Mechanics** - Lonely (fighter self-passive) and Guru (doubled squire passive) traits
-- **ENHANCED Battle UI** - Enemy attack display and detailed Guru passive indicators  
-- **ADDED Money Cheat Code** - "money + Great" combination for +1000 coins testing
-- **IMPROVED Passive Visualization** - Clear indicators for trait-enhanced effects in battle
-- **FIXED Guru Trait Implementation** - Proper passive doubling for squires with comprehensive logging
-- **ENHANCED UI Feedback** - Visual indicators (🎭) for active Guru traits in compact view
-- **ADDED Trait System** - Individual knight enhancement with 7 trait types and 100 coin rolling cost
-- **UPDATED King's Blessing Event** - Increased chance from 1% to 10% for better dual squire accessibility
-- **ENHANCED Collection UI** - Added trait display and roll buttons to knight cards
-- **IMPROVED Battle Integration** - Fighter trait bonuses automatically apply to combat stats
+- **ENHANCED Event System** - Earlier event triggers (20% after stage 1) and ongoing King's Blessing value
+- **IMPROVED Event Appearance** - Dynamic backgrounds (gold for King's Blessing, black for Life Tree)
+- **ADDED King's Blessing Coin Reward** - +100 coins when already unlocked, making event permanently valuable
+- **UPDATED Event Frequency** - More accessible events with 80% chance after stage 4
+- **FIXED PassiveManager Integration** - Proper damage resistance caps (95%) prevent invincibility exploits
+- **ENHANCED Passive Balance** - All dangerous passives now properly capped for game balance
 
 ---
 
@@ -629,7 +646,3 @@ private String findCorrectKnightName(String oldName) {
 - Developer options "Force RTL layout direction"
 - Physical device language switching to Hebrew (עברית)
 
----
-
-*Last Updated: Added Trait System with individual knight enhancement mechanics, increased King's Blessing event accessibility, implemented comprehensive trait UI with rolling system, integrated trait bonuses into battle calculations, enhanced collection management with persistent trait storage, and automated documentation pipeline*
-*Status: Fully functional game with comprehensive animation system, robust anti-cheat measures, individual knight trait progression, dual squire system, automated documentation pipeline, and consistent cross-language layout compatibility - ready for advanced feature development and global deployment*
