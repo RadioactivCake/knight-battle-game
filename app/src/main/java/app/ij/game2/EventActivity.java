@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.RelativeLayout;  // ADD THIS LINE
 import androidx.appcompat.app.AppCompatActivity;
 
 public class EventActivity extends AppCompatActivity {
@@ -65,5 +66,18 @@ public class EventActivity extends AppCompatActivity {
 
         eventNameText.setText(eventName);
         eventDescriptionText.setText(eventDescription);
+
+        // Get the root layout directly
+        RelativeLayout rootLayout = findViewById(R.id.eventRootLayout);
+
+        if (eventName.equals("King's Blessing")) {
+            rootLayout.setBackgroundColor(0xFFFFD700); // Gold
+            eventNameText.setTextColor(0xFF000000);    // Black
+            eventDescriptionText.setTextColor(0xFF000000); // Black
+        } else {
+            rootLayout.setBackgroundColor(0xFF000000); // Black
+            eventNameText.setTextColor(0xFFFFFFFF);    // White
+            eventDescriptionText.setTextColor(0xFFCCCCCC); // Light gray
+        }
     }
 }

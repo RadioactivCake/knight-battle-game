@@ -70,21 +70,25 @@ public class Character {
     public void takeDamage(int damage) {
         Random random = new Random();
 
-        // Check for combined evasion
+        // Check for combined evasion first
         float evasionChance = passiveManager.getCombinedEvasion();
         if (evasionChance > 0 && random.nextFloat() < evasionChance) {
             android.util.Log.d("Character", "Attack evaded! (" + (evasionChance * 100) + "% chance)");
-            return;
+            return; // No damage taken due to evasion
         }
 
         // Apply combined damage resistance
         float damageResistance = passiveManager.getCombinedDamageResistance();
         if (damageResistance > 0) {
+            int originalDamage = damage;
             damage = (int)(damage * (1.0f - damageResistance));
-            android.util.Log.d("Character", "Damage reduced by " + (damageResistance * 100) + "%");
+            android.util.Log.d("Character", "Damage reduced from " + originalDamage + " to " + damage +
+                    " (" + (damageResistance * 100) + "% resistance)");
         }
 
+        // Apply final damage
         currentHealth = Math.max(0, currentHealth - damage);
+        android.util.Log.d("Character", "Final damage taken: " + damage + ", Health: " + currentHealth + "/" + maxHealth);
     }
 
     public int performAttack(boolean isLightAttack, boolean isMediumAttack, boolean isHeavyAttack) {

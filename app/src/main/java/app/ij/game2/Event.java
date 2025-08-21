@@ -22,6 +22,7 @@ public class Event {
     public float getBaseChance() { return baseChance; }
 
     // UPDATED: Execute the event effect with SharedPreferences access
+    // UPDATED: Execute the event effect with SharedPreferences access
     public void executeEvent(Character player, SharedPreferences sharedPreferences) {
         switch (name) {
             case "Life Tree":
@@ -32,11 +33,23 @@ public class Event {
                 break;
 
             case "King's Blessing":
-                // Unlock second squire slot permanently
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putBoolean("has_kings_blessing", true);
+
+                // Check if already unlocked
+                boolean alreadyHasBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
+
+                if (!alreadyHasBlessing) {
+                    // First time: Unlock second squire slot
+                    editor.putBoolean("has_kings_blessing", true);
+                    android.util.Log.d("EventSystem", "King's Blessing unlocked! Second squire slot now available.");
+                } else {
+                    // Already unlocked: Give 100 coins instead
+                    int currentCoins = sharedPreferences.getInt("coins", 0);
+                    editor.putInt("coins", currentCoins + 100);
+                    android.util.Log.d("EventSystem", "King's Blessing coin reward! +100 coins (already unlocked)");
+                }
+
                 editor.apply();
-                android.util.Log.d("EventSystem", "King's Blessing unlocked! Second squire slot now available.");
                 break;
         }
     }

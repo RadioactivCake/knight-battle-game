@@ -24,12 +24,13 @@ public class EventDatabase {
 
         AVAILABLE_EVENTS.add(new Event(
                 "King's Blessing",
-                "The ancient king grants you the power to command two squires in battle!",
+                "The ancient king grants you his blessing! (Unlocks dual squires OR +100 coins if already unlocked)",
                 "LEGENDARY",
-                50.0f   // TEMPORARY: 50% chance for testing (change back to 1.0f later)
+                10.0f   // 10% chance
         ));
     }
 
+    // NEW METHOD: Get event based on stage and unlock status
     // NEW METHOD: Get event based on stage and unlock status
     public static Event getEventForStage(int currentStage, SharedPreferences sharedPreferences) {
         // Stage 5+ (mini boss completed) = always Life Tree
@@ -37,19 +38,24 @@ public class EventDatabase {
             return getEventByName("Life Tree");
         }
 
-        // Stages 2-4: Check if King's Blessing is already unlocked
+        // Stages 1-4: Check if King's Blessing is already unlocked
         boolean hasKingsBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
 
         if (hasKingsBlessing) {
-            // Already have King's Blessing - can only get Life Tree
-            return getEventByName("Life Tree");
-        } else {
-            // TEMPORARY FOR TESTING: 50% chance for King's Blessing, 50% for Life Tree
+            // Already have King's Blessing - but can still get it for coins!
             Random random = new Random();
-            if (random.nextInt(100) < 10) { // CHANGE BACK TO 10 WHEN DONE TESTING
+            if (random.nextInt(100) < 90) { // 10% chance for King's Blessing (for coins)
                 return getEventByName("King's Blessing");
             } else {
-                return getEventByName("Life Tree");
+                return getEventByName("Life Tree"); // 90% chance for Life Tree
+            }
+        } else {
+            // Don't have King's Blessing yet - higher chance to get it
+            Random random = new Random();
+            if (random.nextInt(100) < 10) { // 10% chance for King's Blessing (to unlock)
+                return getEventByName("King's Blessing");
+            } else {
+                return getEventByName("Life Tree"); // 90% chance for Life Tree
             }
         }
     }
@@ -66,28 +72,27 @@ public class EventDatabase {
 
     // UPDATED: Check if event should occur based on stage
     public static boolean shouldEventOccur(int currentStage) {
-        if (currentStage == 1) {
-            return false; // No events after stage 1
-        }
-
         if (currentStage >= 5) {
             // After mini boss (stage 5+), always 100% chance for Life Tree
             return true;
         }
 
-        // Progressive chances for stages 2-4
+        // Progressive chances starting from stage 1
         Random random = new Random();
         float eventChance;
 
         switch (currentStage) {
+            case 1:
+                eventChance = 0.20f; // 20% chance after stage 1
+                break;
             case 2:
-                eventChance = 0.20f; // 20% chance after stage 2
+                eventChance = 0.40f; // 40% chance after stage 2
                 break;
             case 3:
-                eventChance = 0.40f; // 40% chance after stage 3
+                eventChance = 0.60f; // 60% chance after stage 3
                 break;
             case 4:
-                eventChance = 0.60f; // 60% chance after stage 4
+                eventChance = 0.80f; // 80% chance after stage 4
                 break;
             default:
                 eventChance = 0.0f;
