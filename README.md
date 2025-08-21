@@ -645,4 +645,5 @@ private String findCorrectKnightName(String oldName) {
 - Hebrew locale emulator testing
 - Developer options "Force RTL layout direction"
 - Physical device language switching to Hebrew (עברית)
-
+---
+>:D
