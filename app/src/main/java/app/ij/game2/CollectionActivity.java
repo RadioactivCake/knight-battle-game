@@ -17,6 +17,8 @@ import java.util.List;
 
 public class CollectionActivity extends AppCompatActivity {
 
+    private Button chapterMainButton, chapter1Button;
+    private String currentChapter = "MAIN"; // Track current chapter
     private LinearLayout knightContainer, filterContainer;
     private Button backButton, massEvolveButton;
     private Button filterAllButton, filterCommonButton, filterRareButton, filterEpicButton, filterEvolvedButton, filterLegendaryButton;
@@ -72,6 +74,8 @@ public class CollectionActivity extends AppCompatActivity {
         filterEpicButton = findViewById(R.id.filterEpicButton);
         filterEvolvedButton = findViewById(R.id.filterEvolvedButton);
         filterLegendaryButton = findViewById(R.id.filterLegendaryButton);
+        chapterMainButton = findViewById(R.id.chapterMainButton);
+        chapter1Button = findViewById(R.id.chapter1Button);
 
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -94,9 +98,12 @@ public class CollectionActivity extends AppCompatActivity {
         filterEpicButton.setOnClickListener(v -> applyFilter("EPIC"));
         filterEvolvedButton.setOnClickListener(v -> applyFilter("EVOLVED"));
         filterLegendaryButton.setOnClickListener(v -> applyFilter("LEGENDARY"));
-
+        chapterMainButton.setOnClickListener(v -> switchToChapter("MAIN"));
+        chapter1Button.setOnClickListener(v -> switchToChapter("CHAPTER1"));
         // Set initial filter state
         updateFilterButtons();
+        updateChapterButtons();
+
     }
 
     // Update the loadKnights() method in CollectionActivity.java
@@ -108,57 +115,92 @@ public class CollectionActivity extends AppCompatActivity {
 
         // Get owned knights from preferences
         String ownedKnights = sharedPreferences.getString("owned_knights", "Brave Knight");
-        String[] knightNames = ownedKnights.split(",");
+        String ownedChapter1Knights = sharedPreferences.getString("owned_chapter1_knights", ""); // NEW
+        String[] knightNames;
 
-        // Get equipped knight and squire
+        // Determine which knights to load based on current chapter
+        if (currentChapter.equals("CHAPTER1")) {
+            knightNames = ownedChapter1Knights.isEmpty() ? new String[0] : ownedChapter1Knights.split(",");
+        } else {
+            knightNames = ownedKnights.split(",");
+        }
+
+        // Get equipped knight and squire (for main chapter only)
         String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
         String equippedSquire = sharedPreferences.getString("equipped_squire", "");
 
         for (String knightName : knightNames) {
             knightName = knightName.trim();
+            if (knightName.isEmpty()) continue;
 
-            if (knightName.equals("King's Guard")) {
-                // Admin testing knight - create with special stats
-                Knight adminKnight = new AdminKnight("King's Guard", 1000, 1000, "player_character");
-                adminKnight.setEquipped(equippedKnight.equals(adminKnight.getName()));
-                adminKnight.setQuantity(1); // Always quantity 1
-                loadKnightTrait(adminKnight); // ADD THIS
-                allKnights.add(adminKnight);
-            } else if (knightName.startsWith("Evolved ")) {
-                // Evolved knights have saved stats, not database stats
-                int savedHp = sharedPreferences.getInt(knightName + "_hp", 200);
-                int savedAttack = sharedPreferences.getInt(knightName + "_attack", 40);
-                int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
-
-                Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
-                knight.setEquipped(equippedKnight.equals(knight.getName()));
-                knight.setQuantity(quantity);
-                loadKnightTrait(knight); // ADD THIS
-                allKnights.add(knight);
+            if (currentChapter.equals("CHAPTER1")) {
+                // Load Chapter 1 knights (special handling)
+                loadChapter1Knight(knightName);
             } else {
-                // Try to load from database first
-                KnightDatabase.KnightData data = KnightDatabase.getKnightDataByName(knightName);
-
-                Knight knight;
-                if (data != null) {
-                    // Knight exists in database - use database data
-                    knight = new Knight(data.id);
-                } else {
-                    // Legacy knight not in database - load from saved data
-                    int baseHp = sharedPreferences.getInt(knightName + "_hp", 100);
-                    int baseAttack = sharedPreferences.getInt(knightName + "_attack", 20);
-                    knight = new Knight(knightName, baseHp, baseAttack, "player_character");
-                }
-
-                knight.setEquipped(equippedKnight.equals(knight.getName()));
-                knight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
-                loadKnightTrait(knight); // ADD THIS
-                allKnights.add(knight);
+                // Load main chapter knights (existing logic)
+                loadMainChapterKnight(knightName, equippedKnight, equippedSquire);
             }
         }
 
         // Apply current filter to set the displayed knights
         applyCurrentFilter();
+    }
+
+    private void loadChapter1Knight(String knightName) {
+        if (knightName.equals("Axolotl Lord")) {
+            // Load Axolotl Lord with special stats (600 total, 4:1 ratio)
+            int savedHp = sharedPreferences.getInt(knightName + "_hp", 480);
+            int savedAttack = sharedPreferences.getInt(knightName + "_attack", 120);
+            int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
+
+            Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
+            knight.setQuantity(quantity);
+            loadKnightTrait(knight);
+            allKnights.add(knight);
+
+            android.util.Log.d("ChapterSystem", "Loaded Axolotl Lord: " + savedHp + " HP, " + savedAttack + " ATK");
+        }
+        // Add more Chapter 1 knights here in the future
+    }
+
+    private void loadMainChapterKnight(String knightName, String equippedKnight, String equippedSquire) {
+        // Existing knight loading logic from your current loadKnights() method
+        // (All the existing code for King's Guard, evolved knights, database knights, etc.)
+
+        if (knightName.equals("King's Guard")) {
+            Knight adminKnight = new AdminKnight("King's Guard", 1000, 1000, "player_character");
+            adminKnight.setEquipped(equippedKnight.equals(adminKnight.getName()));
+            adminKnight.setQuantity(1);
+            loadKnightTrait(adminKnight);
+            allKnights.add(adminKnight);
+        } else if (knightName.startsWith("Evolved ")) {
+            int savedHp = sharedPreferences.getInt(knightName + "_hp", 200);
+            int savedAttack = sharedPreferences.getInt(knightName + "_attack", 40);
+            int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
+
+            Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
+            knight.setEquipped(equippedKnight.equals(knight.getName()));
+            knight.setQuantity(quantity);
+            loadKnightTrait(knight);
+            allKnights.add(knight);
+        } else {
+            // Regular knights and database knights (existing logic)
+            KnightDatabase.KnightData data = KnightDatabase.getKnightDataByName(knightName);
+
+            Knight knight;
+            if (data != null) {
+                knight = new Knight(data.id);
+            } else {
+                int baseHp = sharedPreferences.getInt(knightName + "_hp", 100);
+                int baseAttack = sharedPreferences.getInt(knightName + "_attack", 20);
+                knight = new Knight(knightName, baseHp, baseAttack, "player_character");
+            }
+
+            knight.setEquipped(equippedKnight.equals(knight.getName()));
+            knight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
+            loadKnightTrait(knight);
+            allKnights.add(knight);
+        }
     }
 
     private void updateMassEvolveButtonVisibility() {
@@ -356,6 +398,37 @@ public class CollectionActivity extends AppCompatActivity {
             });
 
             buttonContainer.addView(evolveButton);
+        }
+        if (knight.getName().equals("Evolved Axolotl Knight")) {
+            checkForAxolotlLordEvolution(knight);
+
+            // Show evolution button if requirements are met
+            boolean hasMaxCopies = knight.getQuantity() >= 11;
+            boolean hasCharacterDevelopment = knight.hasTrait() &&
+                    knight.getTrait().getName().equals("Character Development");
+
+            if (hasMaxCopies && hasCharacterDevelopment) {
+                Button ultimateEvolveButton = new Button(this);
+                ultimateEvolveButton.setText("ULTIMATE\nEVOLUTION");
+                ultimateEvolveButton.setTextSize(10);
+                ultimateEvolveButton.setTypeface(null, android.graphics.Typeface.BOLD);
+                ultimateEvolveButton.setTextColor(0xFFFFFFFF);
+                ultimateEvolveButton.setBackgroundColor(0xFFFF1493); // Divine pink
+                ultimateEvolveButton.setPadding(8, 8, 8, 8);
+
+                LinearLayout.LayoutParams ultimateParams = new LinearLayout.LayoutParams(180, 80);
+                ultimateParams.setMargins(15, 5, 0, 10);
+                ultimateEvolveButton.setLayoutParams(ultimateParams);
+
+                ultimateEvolveButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        showAxolotlLordEvolutionDialog(knight);
+                    }
+                });
+
+                buttonContainer.addView(ultimateEvolveButton);
+            }
         }
 
         // Trait button (NEW) - Available for all knights except King's Guard
@@ -879,11 +952,23 @@ public class CollectionActivity extends AppCompatActivity {
 
         String message = "Roll for a trait for " + knight.getName() + "?\n\n" +
                 "💰 Cost: 100 coins\n" +
-                "🎲 Chances:\n" +
-                "• Common (40%): Tough (+25% HP) or Flash (+25% ATK)\n" +
-                "• Rare (30%): Golem (+50% HP) or Blitz (+50% ATK)\n" +
-                "• Epic (20%): Expert (+50% HP and ATK)\n" +
-                "• Legendary (10%): Main Character (+100% HP and ATK)\n\n";
+                "🎲 Chances:\n";
+
+        if (knight.getName().equals("Evolved Axolotl Knight")) {
+            // Special chances for Evolved Axolotl Knight
+            message += "• Common (36%): Tough (+25% HP) or Flash (+25% ATK)\n" +
+                    "• Rare (30%): Golem (+50% HP) or Blitz (+50% ATK)\n" +
+                    "• Epic (20%): Expert (+50% HP and ATK) or Lonely\n" +
+                    "• Legendary (10%): Main Character (+100% HP and ATK) or Guru\n" +
+                    "• Divine (4%): Character Development (+200% HP and ATK) ⭐\n\n" +
+                    "✨ This knight has access to the unique Divine trait! ✨\n\n";
+        } else {
+            // Normal chances for other knights
+            message += "• Common (40%): Tough (+25% HP) or Flash (+25% ATK)\n" +
+                    "• Rare (30%): Golem (+50% HP) or Blitz (+50% ATK)\n" +
+                    "• Epic (20%): Expert (+50% HP and ATK) or Lonely\n" +
+                    "• Legendary (10%): Main Character (+100% HP and ATK) or Guru\n\n";
+        }
 
         if (knight.hasTrait()) {
             message += "⚠️ This will replace current trait: " + knight.getTrait().getDisplayString() + "\n\n";
@@ -907,8 +992,16 @@ public class CollectionActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putInt("coins", currentCoins - 100);
 
-        // Roll for trait
-        Trait newTrait = TraitDatabase.rollRandomTrait();
+        // Roll for trait based on knight type
+        Trait newTrait;
+        if (knight.getName().equals("Evolved Axolotl Knight")) {
+            // Special rolling for Evolved Axolotl Knight (includes Divine trait)
+            newTrait = TraitDatabase.rollTraitForEvolvedAxolotlKnight();
+            android.util.Log.d("TraitSystem", "Evolved Axolotl Knight trait roll: " + newTrait.getName());
+        } else {
+            // Regular rolling for all other knights
+            newTrait = TraitDatabase.rollRandomTrait();
+        }
 
         // Save trait to knight
         knight.setTrait(newTrait);
@@ -956,5 +1049,151 @@ public class CollectionActivity extends AppCompatActivity {
                 android.util.Log.d("TraitSystem", "Loaded trait for " + knight.getName() + ": " + traitName);
             }
         }
+    }
+
+    private void switchToChapter(String chapter) {
+        currentChapter = chapter;
+        currentFilter = "ALL"; // Reset filter when switching chapters
+
+        updateChapterButtons();
+        updateFilterButtons();
+        loadKnights();
+        displayKnights();
+
+        android.util.Log.d("ChapterSystem", "Switched to chapter: " + chapter);
+    }
+
+    private void updateChapterButtons() {
+        // Reset all chapter button backgrounds
+        chapterMainButton.setBackgroundColor(0xFF444444);
+        chapterMainButton.setTextColor(0xFFFFFFFF);
+        chapter1Button.setBackgroundColor(0xFF444444);
+        chapter1Button.setTextColor(0xFFFFFFFF);
+
+        // Highlight active chapter
+        switch (currentChapter) {
+            case "MAIN":
+                chapterMainButton.setBackgroundColor(0xFFFFFFFF);
+                chapterMainButton.setTextColor(0xFF000000);
+                break;
+            case "CHAPTER1":
+                chapter1Button.setBackgroundColor(0xFFFFD700); // Gold for special chapter
+                chapter1Button.setTextColor(0xFF000000);
+                break;
+        }
+    }
+
+    private void checkForAxolotlLordEvolution(Knight knight) {
+        // Check if this is Evolved Axolotl Knight with requirements
+        if (!knight.getName().equals("Evolved Axolotl Knight")) {
+            return;
+        }
+
+        // Check requirements: 11 copies (10 duplicates) and Character Development trait
+        boolean hasMaxCopies = knight.getQuantity() >= 11;
+        boolean hasCharacterDevelopment = knight.hasTrait() &&
+                knight.getTrait().getName().equals("Character Development");
+
+        if (hasMaxCopies && hasCharacterDevelopment) {
+            // Show Axolotl Lord evolution option
+            showAxolotlLordEvolutionDialog(knight);
+        }
+    }
+
+    private void showAxolotlLordEvolutionDialog(Knight knight) {
+        String message = "🌟 ULTIMATE EVOLUTION AVAILABLE! 🌟\n\n" +
+                "Your Evolved Axolotl Knight has reached the pinnacle of power!\n\n" +
+                "Requirements Met:\n" +
+                "✅ 10 Duplicates (100% stat bonus)\n" +
+                "✅ Character Development Trait (+200% stats)\n\n" +
+                "Transform into:\n" +
+                "🔥 AXOLOTL LORD 🔥\n" +
+                "Base Stats: 480 HP / 120 ATK (600 total)\n" +
+                "Chapter: Story Chapter 1\n\n" +
+                "⚠️ This evolution is PERMANENT and moves the knight to Chapter 1!\n" +
+                "⚠️ You will lose all duplicates and traits!\n\n" +
+                "Begin the ultimate transformation?";
+
+        new AlertDialog.Builder(this)
+                .setTitle("🌟 Ultimate Evolution")
+                .setMessage(message)
+                .setPositiveButton("TRANSFORM!", (dialog, which) -> {
+                    evolveToAxolotlLord(knight);
+                })
+                .setNegativeButton("Not Yet", null)
+                .show();
+    }
+
+    private void evolveToAxolotlLord(Knight knight) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Remove Evolved Axolotl Knight from main collection
+        String ownedKnights = sharedPreferences.getString("owned_knights", "");
+        String updatedKnights = ownedKnights.replace(",Evolved Axolotl Knight", "")
+                .replace("Evolved Axolotl Knight,", "")
+                .replace("Evolved Axolotl Knight", "");
+        if (updatedKnights.isEmpty()) {
+            updatedKnights = "Brave Knight"; // Fallback
+        }
+        editor.putString("owned_knights", updatedKnights);
+
+        // Clear Evolved Axolotl Knight data
+        editor.remove("Evolved Axolotl Knight_quantity");
+        editor.remove("Evolved Axolotl Knight_hp");
+        editor.remove("Evolved Axolotl Knight_attack");
+        editor.remove("Evolved Axolotl Knight_trait");
+
+        // Add Axolotl Lord to Chapter 1
+        String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
+        if (chapter1Knights.isEmpty()) {
+            chapter1Knights = "Axolotl Lord";
+        } else {
+            chapter1Knights += ",Axolotl Lord";
+        }
+        editor.putString("owned_chapter1_knights", chapter1Knights);
+
+        // Set Axolotl Lord stats (600 total with 4:1 ratio)
+        editor.putInt("Axolotl Lord_hp", 480);    // 4/5 of 600 = 480
+        editor.putInt("Axolotl Lord_attack", 120); // 1/5 of 600 = 120
+        editor.putInt("Axolotl Lord_quantity", 1);
+        editor.putString("Axolotl Lord_image", "player_character");
+
+        // If Evolved Axolotl Knight was equipped, unequip
+        String equippedKnight = sharedPreferences.getString("equipped_knight", "");
+        String equippedSquire = sharedPreferences.getString("equipped_squire", "");
+        String equippedSquire2 = sharedPreferences.getString("equipped_squire2", "");
+
+        if (equippedKnight.equals("Evolved Axolotl Knight")) {
+            editor.putString("equipped_knight", "Brave Knight"); // Fallback
+        }
+        if (equippedSquire.equals("Evolved Axolotl Knight")) {
+            editor.putString("equipped_squire", "");
+        }
+        if (equippedSquire2.equals("Evolved Axolotl Knight")) {
+            editor.putString("equipped_squire2", "");
+        }
+
+        editor.apply();
+
+        // Show success message and switch to Chapter 1
+        showAxolotlLordSuccess();
+    }
+
+    private void showAxolotlLordSuccess() {
+        String message = "🌟 TRANSFORMATION COMPLETE! 🌟\n\n" +
+                "The Evolved Axolotl Knight has transcended its limits!\n\n" +
+                "🔥 AXOLOTL LORD has been born! 🔥\n\n" +
+                "Base Stats: 480 HP / 120 ATK (600 total)\n" +
+                "Location: Story Chapter 1\n\n" +
+                "The story begins... ⚔️";
+
+        new AlertDialog.Builder(this)
+                .setTitle("🌟 Ultimate Evolution Complete!")
+                .setMessage(message)
+                .setPositiveButton("Enter Chapter 1", (dialog, which) -> {
+                    switchToChapter("CHAPTER1");
+                })
+                .setCancelable(false)
+                .show();
     }
 }

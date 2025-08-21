@@ -25,6 +25,9 @@ public class TraitDatabase {
         // LEGENDARY TRAITS (10% total chance)
         ALL_TRAITS.add(new Trait("Main Character", "+100% HP and ATK", "LEGENDARY", 1.0f, 1.0f));
         ALL_TRAITS.add(new Trait("Guru", "Attack = 0, but passive effect doubled", "LEGENDARY", 0.0f, 0.0f));
+
+        // DIVINE TRAIT (4% total chance - Evolved Axolotl Knight only)
+        ALL_TRAITS.add(new Trait("Character Development", "+200% HP and ATK", "DIVINE", 2.0f, 2.0f));
     }
 
     // Roll for a random trait using chest-like probabilities
@@ -53,6 +56,40 @@ public class TraitDatabase {
         else {
             // LEGENDARY (10% chance) - Main Character
             return random.nextBoolean() ? getAllTraits().get(6) : getAllTraits().get(7); // Guru is now index 7
+        }
+    }
+
+    // Special rolling method for Evolved Axolotl Knight
+    public static Trait rollTraitForEvolvedAxolotlKnight() {
+        Random random = new Random();
+        int chance = random.nextInt(100); // 0-99
+
+        // Special rarity distribution for Evolved Axolotl Knight:
+        // 0-35 = Common (36%)
+        // 36-65 = Rare (30%)
+        // 66-85 = Epic (20%)
+        // 86-95 = Legendary (10%)
+        // 96-99 = Divine (4%)
+
+        if (chance < 36) {
+            // COMMON (36% chance)
+            return random.nextBoolean() ? getAllTraits().get(0) : getAllTraits().get(1);
+        }
+        else if (chance < 66) {
+            // RARE (30% chance)
+            return random.nextBoolean() ? getAllTraits().get(2) : getAllTraits().get(3);
+        }
+        else if (chance < 86) {
+            // EPIC (20% chance)
+            return random.nextBoolean() ? getAllTraits().get(4) : getAllTraits().get(5);
+        }
+        else if (chance < 96) {
+            // LEGENDARY (10% chance)
+            return random.nextBoolean() ? getAllTraits().get(6) : getAllTraits().get(7);
+        }
+        else {
+            // DIVINE (4% chance) - Character Development only
+            return getAllTraits().get(8); // Character Development
         }
     }
 

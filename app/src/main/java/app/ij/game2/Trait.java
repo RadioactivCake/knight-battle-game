@@ -69,6 +69,7 @@ public class Trait {
     }
 
     // Get rarity color for UI
+    // Get rarity color for UI
     public int getRarityColor() {
         switch (rarity) {
             case "COMMON":
@@ -79,6 +80,8 @@ public class Trait {
                 return 0xFF8A2BE2; // Purple
             case "LEGENDARY":
                 return 0xFFFFD700; // Gold
+            case "DIVINE":
+                return 0xFFFF1493; // Deep Pink / Divine Pink
             default:
                 return 0xFF888888;
         }

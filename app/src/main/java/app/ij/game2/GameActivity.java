@@ -540,29 +540,33 @@ public class GameActivity extends AppCompatActivity {
 
             stagesCompleted++;
 
-            // Track coins for this run (don't add to total yet)
-            int coinsForThisBoss = 0;
+            // Calculate base coins for this boss
+            int baseCoins = 0;
             if (currentStage >= maxStages) {
-                // Final boss of world - 60 coins
-                coinsForThisBoss = 60;
+                // Final boss of world - 60 base coins
+                baseCoins = 60;
             } else {
-                // Regular boss - 10 coins
-                coinsForThisBoss = 10;
+                // Regular boss - 10 base coins
+                baseCoins = 10;
             }
+
+            // Apply world multiplier
+            int coinsForThisBoss = baseCoins * currentWorld;
             coinsEarnedThisRun += coinsForThisBoss;
+
+            android.util.Log.d("CoinSystem", "Stage " + currentStage + " World " + currentWorld +
+                    ": Base " + baseCoins + " × " + currentWorld + " = " + coinsForThisBoss + " coins");
 
             // CHECK FOR EVENT BUT DON'T TRIGGER YET
             boolean eventOccurred = checkForEvent();
 
             // WAIT FOR VICTORY ANIMATION TO COMPLETE BEFORE PROCEEDING
-            // This ensures events happen AFTER character exits screen
             playerCharacterImage.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    // NOW handle events and stage progression in proper order
                     handlePostVictorySequence(eventOccurred);
                 }
-            }, 2000); // Wait 2 seconds for complete victory sequence to finish
+            }, 2000);
 
             return;
         }
@@ -639,19 +643,16 @@ public class GameActivity extends AppCompatActivity {
         String message;
         String subMessage;
 
-        // Player died - lose all coins for this run
         int totalBossesDefeated = (worldsCompleted * maxStages) + stagesCompleted;
         message = "💀 DEFEATED! 💀";
         if (totalBossesDefeated > 0) {
             subMessage = "You were defeated and lost all potential rewards!\n\n" +
                     "You defeated " + totalBossesDefeated + " bosses and reached World " + currentWorld + ".\n\n" +
-                    "💔 Coins lost: " + coinsEarnedThisRun + " (lost due to death)\n" +
+                    "💔 Coins lost: " + coinsEarnedThisRun + " (with world " + currentWorld + " multipliers)\n" +
                     "💡 Next time, consider surrendering when low on health to keep your coins!";
         } else {
             subMessage = "You didn't defeat any bosses.\nBetter luck next time!";
         }
-
-        // Don't add any coins - they're lost due to death
 
         new AlertDialog.Builder(this)
                 .setTitle(message)
@@ -693,7 +694,8 @@ public class GameActivity extends AppCompatActivity {
     private void showSurrenderDialog() {
         String message = "Are you sure you want to surrender?\n\n" +
                 "💰 GOOD NEWS: You'll keep all coins earned from defeated bosses!\n" +
-                "Current potential earnings: " + coinsEarnedThisRun + " coins\n\n" +
+                "Current earnings: " + coinsEarnedThisRun + " coins (with World " + currentWorld + " multipliers)\n\n" +
+                "🌟 World " + currentWorld + " Bonus: All coins are multiplied by " + currentWorld + "x!\n\n" +
                 "🛡️ STRATEGIC TIP: Surrendering when low on health is better than dying and losing everything!\n\n" +
                 "⚠️ You will return to the lobby and lose progress in this run.";
 
@@ -701,7 +703,6 @@ public class GameActivity extends AppCompatActivity {
                 .setTitle("🏳️ Strategic Retreat")
                 .setMessage(message)
                 .setPositiveButton("Yes, Surrender", (dialog, which) -> {
-                    // End game with surrender
                     surrenderGame();
                 })
                 .setNegativeButton("Keep Fighting", null)
@@ -712,7 +713,6 @@ public class GameActivity extends AppCompatActivity {
         gameOver = true;
         updateButtonStates();
 
-        // Award coins when surrendering (player keeps their earnings)
         addCoins(coinsEarnedThisRun);
 
         int totalBossesDefeated = (worldsCompleted * maxStages) + stagesCompleted;
@@ -721,7 +721,7 @@ public class GameActivity extends AppCompatActivity {
                 "📊 Run Summary:\n" +
                 "• Bosses defeated: " + totalBossesDefeated + "\n" +
                 "• Highest world: " + currentWorld + "\n" +
-                "💰 Coins earned: " + coinsEarnedThisRun;
+                "💰 Coins earned: " + coinsEarnedThisRun + " (with " + currentWorld + "x world multiplier)";
 
         new AlertDialog.Builder(this)
                 .setTitle("Wise Decision!")
