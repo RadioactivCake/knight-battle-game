@@ -44,7 +44,7 @@ public class EventDatabase {
         if (hasKingsBlessing) {
             // Already have King's Blessing - but can still get it for coins!
             Random random = new Random();
-            if (random.nextInt(100) < 90) { // 10% chance for King's Blessing (for coins)
+            if (random.nextInt(100) < 10) { // 10% chance for King's Blessing (for coins)
                 return getEventByName("King's Blessing");
             } else {
                 return getEventByName("Life Tree"); // 90% chance for Life Tree
