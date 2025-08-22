@@ -139,6 +139,15 @@ This automation eliminates manual PDF generation while providing seamless access
   - Compact view shows Guru indicator (🎭) when active
   - Detailed view shows original → doubled passive values for Guru traits
   - Lonely trait effects clearly labeled in fighter section
+**Enhanced Coin System**:
+- **Base Rewards**: 10 coins (regular enemy), 60 coins (mini boss)
+- **World Multipliers**: All coins multiplied by current world number
+- **Progressive Value**: 
+  - World 1: 10×1 = 10 coins, 60×1 = 60 coins
+  - World 2: 10×2 = 20 coins, 60×2 = 120 coins  
+  - World 5: 10×5 = 50 coins, 60×5 = 300 coins
+- **Strategic Incentive**: Higher worlds become exponentially more rewarding
+- **Economic Balance**: Makes trait rolling (100 coins) more accessible in later worlds
 
 ### 5. Chest System
 - **Cost**: 5 coins per chest, 45 coins for 10x (10% discount)
@@ -306,6 +315,102 @@ public int getMaxHealth() {
 - Same rarity distribution as chest system maintains consistency
 - Exponential power scaling from +25% (common) to +100% (legendary)
 - Post-duplicate application ensures traits scale with knight progression
+
+### 12. Divine Trait System (NEW)
+**Ultra-rare trait exclusive to evolved knights with unique properties and storyline integration.**
+
+**Divine Trait: Character Development**
+- **Exclusive to**: Evolved Axolotl Knight only
+- **Rarity**: Divine (4% chance, reduces Common to 36%)
+- **Effect**: +200% HP and ATK (massive power boost)
+- **Color**: Deep Pink (#FF1493) for Divine rarity
+- **Purpose**: Required for ultimate evolution to Axolotl Lord
+
+**Special Rolling System**:
+- **Evolved Axolotl Knight**: Access to Divine tier (36%/30%/20%/10%/4%)
+- **All Other Knights**: Standard distribution (40%/30%/20%/10%)
+- **UI Integration**: Shows exclusive Divine access in roll dialog
+
+**Strategic Impact**:
+- Creates long-term progression goal beyond regular evolution
+- Sets up storyline requirements for chapter progression
+- Provides exclusive content for dedicated players
+
+### 13. Chapter System & Story Integration (NEW)
+**Multi-chapter collection system that separates main knights from story progression knights.**
+
+**Chapter Navigation**:
+- **Prolog Chapter**: All regular knights (Common → Legendary + Evolved) [UPDATED from "Main"]
+- **Chapter 1**: Story knights obtained through ultimate evolution
+- **Tab Switching**: Dynamic navigation between chapters
+- **Visual Design**: Gold highlighting for story chapters
+
+**Chapter-Specific Features**:
+- **Separate Storage**: Chapter 1 knights stored independently
+- **No Equipment**: Story knights cannot be equipped as fighters/squires
+- **Pure Collection**: Focus on story progression and achievement
+- **Future Expansion**: Architecture ready for multiple story chapters
+
+**Technical Implementation**:
+```java
+// Chapter-based knight storage
+String ownedKnights = sharedPreferences.getString("owned_knights", ""); // Main
+String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", ""); // Story
+### **Add New Section: Ultimate Evolution System (After Section 13)**
+
+```
+
+### 14. Ultimate Evolution System (NEW)
+**Advanced evolution mechanics that transform knights into powerful story characters.**
+
+**Axolotl Lord Evolution** [UPDATED]:
+- **Requirements**: 
+  - Evolved Axolotl Knight with 11 copies (10 duplicates)
+  - Character Development trait (Divine rarity)
+- **Transformation**: 
+  - **From**: Evolved Axolotl Knight (prolog chapter)
+  - **To**: Axolotl Lord (Chapter 1)
+- **Stats**: 800 HP / 200 ATK (1000 total, 4:1 ratio) [UPDATED from 480/120]
+- **Evolution Behavior**: Keeps Evolved Axolotl Knight at quantity 1 (like normal evolution) [FIXED]
+
+**Evolution Process**:
+1. **Detection**: Automatic check when viewing Evolved Axolotl Knight
+2. **Confirmation**: Detailed dialog explaining requirements and consequences
+3. **Transformation**: Remove from main collection, add to Chapter 1
+4. **Chapter Switch**: Automatic navigation to Chapter 1 after evolution
+
+**UI Integration**:
+- **Ultimate Evolution Button**: Special pink button for qualified knights
+- **Requirement Display**: Clear indication of evolution availability
+- **Chapter Migration**: Seamless transition between collection tabs
+
+### 15. Story System & Narrative Integration (NEW)
+**Immersive storyline that guides players through the main progression and introduces chapter mechanics.**
+
+**Story Structure**:
+- **Prolog**: Opening story that sets up the King's challenge
+- **World 4 Completion**: Mid-game story that reveals the path to lordship
+- **Chapter Progression**: Stories unlock based on player achievements
+
+**Story Triggers**:
+- **First Play**: Always shows Prolog story before battle
+- **World 4 Completion**: Triggers after defeating World 4 mini boss
+- **Achievement-Based**: Stories tied to specific progression milestones
+
+**Technical Implementation**:
+- **StoryActivity**: Dedicated activity for story display
+- **Scrollable Content**: Full-screen scrolling with story below continue button
+- **Dynamic Branching**: Different stories based on game state and progression
+
+**Story Content**:
+1. **Prolog**: "The great King has gathered all knights..." - Sets up the royal challenge
+2. **World 4 Story**: "You have conquered four worlds..." - Guides toward Axolotl Lord evolution
+3. **Future Expansion**: Architecture ready for additional story chapters
+
+**UI Features**:
+- **Full-Screen Scrolling**: Story content fills screen, button appears after scrolling
+- **Thematic Design**: Dark background with gold titles and white text
+- **Progress Integration**: Stories unlock based on actual game achievements
 ---
 
 ## 🗃️ Database Structure
@@ -342,6 +447,12 @@ KNIGHT_DATA.put("divine_warrior", new KnightData(
 10. **Phoenix Knight** (phoenix_knight) - Legendary - Critical Hit 35%
 11. **Titan Guardian** (titan_guardian) - Legendary - Damage Resistance 30%
 12. **Divine Warrior** (divine_warrior) - Legendary - Life Steal 30%
+### Chapter 1 Story Knights:
+13. **Axolotl Lord** (axolotl_lord) - Common - Ultimate Power +40% Critical Hit
+- **Exclusive to**: Chapter 1 (story progression)  
+- **Base Stats**: 800 HP / 200 ATK (1000 total)
+- **Rarity**: Common (for future Chapter 1 chest system)
+- **Acquisition**: Ultimate evolution from Evolved Axolotl Knight
 
 **Enhanced Evolved Versions**:
 - All knights can evolve to "Evolved" versions with enhanced passive effects
@@ -495,6 +606,14 @@ private String findCorrectKnightName(String oldName) {
 ### 9. Event Appearance Issues (FIXED)
 **Problem**: King's Blessing event had poor contrast with dark text on dark background
 **Solution**: Implemented dynamic event backgrounds (gold for King's Blessing, black for Life Tree)
+
+### 10. Trait Text Visibility (FIXED)
+**Problem**: Trait text colors (gold, purple, pink) were invisible on matching card backgrounds
+**Solution**: Added text shadows/outlines to ensure readability on all background colors
+
+### 11. Ultimate Evolution Deletion Bug (FIXED)
+**Problem**: Ultimate evolution completely removed Evolved Axolotl Knight from collection
+**Solution**: Fixed evolution to keep the knight at quantity 1 (consistent with normal evolution behavior)
 ---
 
 ## 🎯 Strategic Meta Evolution
@@ -529,9 +648,10 @@ private String findCorrectKnightName(String oldName) {
 ### Admin Cheat Codes (ProfileActivity.java)
 **Two cheat codes available for testing and development:**
 
-#### King's Guard Cheat
+#### King's Guard Cheat (UPDATED)
 - **Trigger**: Name "admin" + Title "Mighty"  
-- **Effect**: Temporary "King's Guard" with 1000 HP/Attack and 99% damage resistance
+- **Effect**: Temporary "King's Guard" with 1000 HP/Attack and **95% damage resistance** (corrected from 99%)
+- **Balance**: Properly capped damage resistance prevents confusion with actual effect
 - **Duration**: Until app restart (auto-cleanup in MainActivity)
 - **Special Handling**: Bypasses normal squire passive system
 
@@ -567,12 +687,13 @@ private String findCorrectKnightName(String oldName) {
 - Attack spam prevention system
 
 ### 🔄 Recent Updates:
-- **ENHANCED Event System** - Earlier event triggers (20% after stage 1) and ongoing King's Blessing value
-- **IMPROVED Event Appearance** - Dynamic backgrounds (gold for King's Blessing, black for Life Tree)
-- **ADDED King's Blessing Coin Reward** - +100 coins when already unlocked, making event permanently valuable
-- **UPDATED Event Frequency** - More accessible events with 80% chance after stage 4
-- **FIXED PassiveManager Integration** - Proper damage resistance caps (95%) prevent invincibility exploits
-- **ENHANCED Passive Balance** - All dangerous passives now properly capped for game balance
+- **ADDED Complete Story System** - Prolog introduction and World 4 completion narrative
+- **IMPLEMENTED Full-Screen Story UI** - Scrollable content with natural reading flow
+- **UPDATED Axolotl Lord Stats** - Increased to 800 HP / 200 ATK (1000 total) for Chapter 1 difficulty
+- **FIXED Ultimate Evolution** - Now preserves Evolved Axolotl Knight at quantity 1 (consistent with normal evolution)
+- **ENHANCED Chapter Navigation** - "Prolog" tab for main knights, clear story progression
+- **PREPARED Database Integration** - Axolotl Lord ready for future Chapter 1 chest system
+- **CREATED Story Architecture** - Expandable system for future chapters and narrative content
 
 ---
 
@@ -590,6 +711,13 @@ private String findCorrectKnightName(String oldName) {
 - **Guilds/Social**: Share progress, compete with friends
 - **More Passive Types**: Reflection damage, temporary immunity, turn-based effects
 - **Enemy Variety**: Different enemy types with unique animations and abilities
+
+### Potential Story Expansions:
+- **Multiple Story Chapters** - Chapter 2, 3, etc. with unique evolution requirements
+- **Story-Specific Battles** - Special combat encounters in story mode
+- **Chapter-Exclusive Knights** - Unique story characters with special abilities
+- **Narrative Integration** - Cutscenes, dialogue, and story progression
+- **Cross-Chapter Mechanics** - Story knights influencing main game progression
 
 ### Unity Migration Planning:
 - Current architecture is Unity-portable
