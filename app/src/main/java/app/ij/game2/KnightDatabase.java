@@ -93,6 +93,22 @@ public class KnightDatabase {
                 "divine_warrior", "Divine Warrior", 140, 80, "LEGENDARY",
                 new Knight.PassiveEffect("Divine Blessing", "Life Steal", "30% life steal", 0.30f, Knight.PassiveType.LIFE_STEAL)
         ));
+
+        // CHAPTER 1 STORY KNIGHTS (for chest system)
+        KNIGHT_DATA.put("axolotl_lord", new KnightData(
+                "axolotl_lord",
+                "Axolotl Lord",
+                800,  // Base HP
+                200,  // Base ATK
+                "COMMON", // CHANGED: Common rarity for Chapter 1 chest drops
+                new Knight.PassiveEffect(
+                        "Lord's Dominion",
+                        "Ultimate Power",
+                        "Massive combat bonuses",
+                        0.50f,
+                        Knight.PassiveType.CRITICAL_HIT
+                )
+        ));
     }
 
     // Utility methods

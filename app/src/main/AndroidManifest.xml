@@ -53,7 +53,12 @@
             android:exported="false"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-
+        <!-- Story Activity -->
+        <activity
+            android:name=".StoryActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
     </application>
 

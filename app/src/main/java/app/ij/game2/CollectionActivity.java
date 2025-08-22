@@ -148,17 +148,25 @@ public class CollectionActivity extends AppCompatActivity {
 
     private void loadChapter1Knight(String knightName) {
         if (knightName.equals("Axolotl Lord")) {
-            // Load Axolotl Lord with special stats (600 total, 4:1 ratio)
-            int savedHp = sharedPreferences.getInt(knightName + "_hp", 480);
-            int savedAttack = sharedPreferences.getInt(knightName + "_attack", 120);
-            int quantity = sharedPreferences.getInt(knightName + "_quantity", 1);
+            // Try to load from database first (for chest consistency)
+            KnightDatabase.KnightData data = KnightDatabase.getKnightDataByName("Axolotl Lord");
 
-            Knight knight = new Knight(knightName, savedHp, savedAttack, "player_character");
-            knight.setQuantity(quantity);
+            Knight knight;
+            if (data != null) {
+                // Use database data (for chest-obtained knights)
+                knight = new Knight(data.id);
+                android.util.Log.d("ChapterSystem", "Loaded Axolotl Lord from database: " + data.baseHP + " HP, " + data.baseAttack + " ATK");
+            } else {
+                // Fallback to saved data (for evolution-obtained knights)
+                int savedHp = sharedPreferences.getInt(knightName + "_hp", 800);
+                int savedAttack = sharedPreferences.getInt(knightName + "_attack", 200);
+                knight = new Knight(knightName, savedHp, savedAttack, "player_character");
+                android.util.Log.d("ChapterSystem", "Loaded Axolotl Lord from saved data: " + savedHp + " HP, " + savedAttack + " ATK");
+            }
+
+            knight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
             loadKnightTrait(knight);
             allKnights.add(knight);
-
-            android.util.Log.d("ChapterSystem", "Loaded Axolotl Lord: " + savedHp + " HP, " + savedAttack + " ATK");
         }
         // Add more Chapter 1 knights here in the future
     }
@@ -1115,10 +1123,11 @@ public class CollectionActivity extends AppCompatActivity {
                 "✅ Character Development Trait (+200% stats)\n\n" +
                 "Transform into:\n" +
                 "🔥 AXOLOTL LORD 🔥\n" +
-                "Base Stats: 480 HP / 120 ATK (600 total)\n" +
+                "Base Stats: 800 HP / 200 ATK (1000 total)\n" +
                 "Chapter: Story Chapter 1\n\n" +
-                "⚠️ This evolution is PERMANENT and moves the knight to Chapter 1!\n" +
-                "⚠️ You will lose all duplicates and traits!\n\n" +
+                "⚠️ This evolution is PERMANENT and moves the new knight to Chapter 1!\n" +
+                "⚠️ You will lose all duplicates and the Character Development trait!\n" +
+                "⚠️ Your Evolved Axolotl Knight will reset to quantity 1!\n\n" +
                 "Begin the ultimate transformation?";
 
         new AlertDialog.Builder(this)
@@ -1134,20 +1143,11 @@ public class CollectionActivity extends AppCompatActivity {
     private void evolveToAxolotlLord(Knight knight) {
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
-        // Remove Evolved Axolotl Knight from main collection
-        String ownedKnights = sharedPreferences.getString("owned_knights", "");
-        String updatedKnights = ownedKnights.replace(",Evolved Axolotl Knight", "")
-                .replace("Evolved Axolotl Knight,", "")
-                .replace("Evolved Axolotl Knight", "");
-        if (updatedKnights.isEmpty()) {
-            updatedKnights = "Brave Knight"; // Fallback
-        }
-        editor.putString("owned_knights", updatedKnights);
+        // FIXED: Keep the Evolved Axolotl Knight but reset to quantity 1 (like normal evolution)
+        // Don't remove from collection, just reset quantity
+        editor.putInt("Evolved Axolotl Knight_quantity", 1);
 
-        // Clear Evolved Axolotl Knight data
-        editor.remove("Evolved Axolotl Knight_quantity");
-        editor.remove("Evolved Axolotl Knight_hp");
-        editor.remove("Evolved Axolotl Knight_attack");
+        // Clear the trait since it was consumed in the evolution
         editor.remove("Evolved Axolotl Knight_trait");
 
         // Add Axolotl Lord to Chapter 1
@@ -1159,25 +1159,24 @@ public class CollectionActivity extends AppCompatActivity {
         }
         editor.putString("owned_chapter1_knights", chapter1Knights);
 
-        // Set Axolotl Lord stats (600 total with 4:1 ratio)
-        editor.putInt("Axolotl Lord_hp", 480);    // 4/5 of 600 = 480
-        editor.putInt("Axolotl Lord_attack", 120); // 1/5 of 600 = 120
+        editor.putInt("Axolotl Lord_hp", 800);    // UPDATE THIS
+        editor.putInt("Axolotl Lord_attack", 200); // UPDATE THIS
         editor.putInt("Axolotl Lord_quantity", 1);
         editor.putString("Axolotl Lord_image", "player_character");
 
-        // If Evolved Axolotl Knight was equipped, unequip
+        // Equipment handling - only unequip if currently equipped
         String equippedKnight = sharedPreferences.getString("equipped_knight", "");
         String equippedSquire = sharedPreferences.getString("equipped_squire", "");
         String equippedSquire2 = sharedPreferences.getString("equipped_squire2", "");
 
         if (equippedKnight.equals("Evolved Axolotl Knight")) {
-            editor.putString("equipped_knight", "Brave Knight"); // Fallback
+            editor.putString("equipped_knight", "Axolotl Knight"); // Switch to base version
         }
         if (equippedSquire.equals("Evolved Axolotl Knight")) {
-            editor.putString("equipped_squire", "");
+            editor.putString("equipped_squire", "Axolotl Knight"); // Switch to base version
         }
         if (equippedSquire2.equals("Evolved Axolotl Knight")) {
-            editor.putString("equipped_squire2", "");
+            editor.putString("equipped_squire2", "Axolotl Knight"); // Switch to base version
         }
 
         editor.apply();
@@ -1190,7 +1189,7 @@ public class CollectionActivity extends AppCompatActivity {
         String message = "🌟 TRANSFORMATION COMPLETE! 🌟\n\n" +
                 "The Evolved Axolotl Knight has transcended its limits!\n\n" +
                 "🔥 AXOLOTL LORD has been born! 🔥\n\n" +
-                "Base Stats: 480 HP / 120 ATK (600 total)\n" +
+                "Base Stats: 800 HP / 200 ATK (1000 total)\n" +
                 "Location: Story Chapter 1\n\n" +
                 "The story begins... ⚔️";
 

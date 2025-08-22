@@ -1002,12 +1002,26 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void handlePostVictorySequence(boolean eventOccurred) {
+        // Check if we just completed World 4
+        boolean justCompletedWorld4 = (currentWorld == 4 && currentStage == 5); // We moved to world 5, stage 1
+
+        if (justCompletedWorld4) {
+            // TESTING: Always show World 4 completion story
+            Intent storyIntent = new Intent(GameActivity.this, StoryActivity.class);
+            storyIntent.putExtra("story_type", "WORLD4_COMPLETION");
+            startActivity(storyIntent);
+
+            // End the current game session
+            finish();
+            return;
+        }
+
         if (eventOccurred) {
             // Get the event
             Event event = getPendingEvent();
 
             // Apply event effect to player WITH SharedPreferences access
-            event.executeEvent(player, sharedPreferences); // <-- ADD sharedPreferences parameter
+            event.executeEvent(player, sharedPreferences);
 
             // Show event screen using Intent directly
             Intent intent = new Intent(GameActivity.this, EventActivity.class);

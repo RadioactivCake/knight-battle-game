@@ -50,8 +50,10 @@ public class MainActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, GameActivity.class);
-                startActivity(intent);
+                // TESTING: Always show opening story
+                Intent storyIntent = new Intent(MainActivity.this, StoryActivity.class);
+                storyIntent.putExtra("story_type", "OPENING");
+                startActivity(storyIntent);
             }
         });
 
