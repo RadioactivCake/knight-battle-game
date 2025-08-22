@@ -327,14 +327,21 @@ public class CollectionActivity extends AppCompatActivity {
         passiveText.setMaxLines(2);
 
         // Trait display (NEW)
+        // Trait display (FIXED with shadow outline)
         TextView traitText = new TextView(this);
         if (knight.hasTrait()) {
             traitText.setText("✨ " + knight.getTrait().getDisplayString());
             traitText.setTextColor(knight.getTrait().getRarityColor());
+
+            // ADD BLACK SHADOW OUTLINE (works on all Android versions)
+            traitText.setShadowLayer(3, 0, 0, 0xFF000000); // Black shadow outline
         } else {
             traitText.setText("✨ No Trait");
             traitText.setTextColor(getResources().getColor(android.R.color.white));
             traitText.setAlpha(0.6f);
+
+            // ADD BLACK SHADOW for "No Trait" text too
+            traitText.setShadowLayer(3, 0, 0, 0xFF000000); // Black shadow outline
         }
         traitText.setTextSize(10);
         traitText.setTypeface(null, android.graphics.Typeface.BOLD);

@@ -223,7 +223,7 @@ public class Knight {
 
 }
 
-// Special admin knight class for testing (unchanged)
+// Special admin knight class for testing
 class AdminKnight extends Knight {
     public AdminKnight(String name, int maxHealth, int attack, String imageName) {
         super(name, maxHealth, attack, imageName);
@@ -231,6 +231,6 @@ class AdminKnight extends Knight {
 
     @Override
     public PassiveEffect getPassiveEffect() {
-        return new PassiveEffect("Royal Protection", "Damage Resistance", "99% damage reduction", 0.99f, PassiveType.DAMAGE_RESISTANCE);
+        return new PassiveEffect("Royal Protection", "Damage Resistance", "95% damage reduction", 0.95f, PassiveType.DAMAGE_RESISTANCE);
     }
 }

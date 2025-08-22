@@ -278,20 +278,24 @@ public class GameActivity extends AppCompatActivity {
         if (hasAdminKnight && equippedKnightName.equals("King's Guard")) {
             // Admin testing knight - super powerful stats
             player = new Character("Player", 1000, 1000);
-            // No passives for admin knight - just raw power
-        } else {
-            // Load regular knight
-            Knight equippedKnight = loadKnightForBattle(equippedKnightName);
 
+            // FIXED: Apply admin knight passive!
+            AdminKnight adminKnight = new AdminKnight("King's Guard", 1000, 1000, "player_character");
+            Knight.PassiveEffect adminPassive = adminKnight.getPassiveEffect();
+            player.addPassiveEffect(adminPassive);
+
+            android.util.Log.d("AdminKnight", "Applied admin passive: " + adminPassive.getName() +
+                    " = " + (adminPassive.getValue() * 100) + "% damage resistance");
+        } else {
+            // Regular knight loading and passive application
+            Knight equippedKnight = loadKnightForBattle(equippedKnightName);
             if (equippedKnight != null) {
-                // Use buffed stats for battle (includes duplicate bonuses)
                 player = new Character("Player", equippedKnight.getMaxHealth(), equippedKnight.getAttack());
             } else {
-                // Fallback
                 player = new Character("Player", 100, 20);
             }
 
-            // Apply all squire passives using the new flexible system
+            // Apply all squire passives
             applyAllSquirePassives(equippedSquireName, equippedSquire2Name);
         }
 
