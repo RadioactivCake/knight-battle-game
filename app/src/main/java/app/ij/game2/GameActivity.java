@@ -1002,42 +1002,62 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void handlePostVictorySequence(boolean eventOccurred) {
-        // Check if we just completed World 4
-        boolean justCompletedWorld4 = (currentWorld == 4 && currentStage == 5); // We moved to world 5, stage 1
+        // Check if we just completed World 4 (MOVED THIS LOGIC)
+        boolean justCompletedWorld4 = (currentWorld == 4 && currentStage == 5);
 
         if (justCompletedWorld4) {
-            // TESTING: Always show World 4 completion story
-            Intent storyIntent = new Intent(GameActivity.this, StoryActivity.class);
-            storyIntent.putExtra("story_type", "WORLD4_COMPLETION");
-            startActivity(storyIntent);
+            // FIRST: Give the player their well-earned rewards
+            addCoins(coinsEarnedThisRun);
 
-            // End the current game session
-            finish();
+            // SECOND: Show world completion celebration
+            showWorld4CompletionDialog(); // New method
+
+            // THIRD: Story will be handled in onResume when dialog is dismissed
             return;
         }
 
+        // Rest of existing logic for normal events...
         if (eventOccurred) {
-            // Get the event
             Event event = getPendingEvent();
-
-            // Apply event effect to player WITH SharedPreferences access
             event.executeEvent(player, sharedPreferences);
 
-            // Show event screen using Intent directly
             Intent intent = new Intent(GameActivity.this, EventActivity.class);
             intent.putExtra("event_name", event.getName());
             intent.putExtra("event_description", event.getDescription());
             startActivity(intent);
 
-            android.util.Log.d("EventSystem", "Event triggered after victory animation: " + event.getName());
-
-            // Set flag so we know to proceed to next stage when returning from event
             pendingStageProgression = true;
-
         } else {
-            // No event - proceed directly to next stage
             proceedToNextStage(false);
         }
+    }
+
+    private void showWorld4CompletionDialog() {
+        int totalBossesDefeated = (worldsCompleted * maxStages) + stagesCompleted;
+
+        String message = "🏆 WORLD 4 CONQUERED! 🏆\n\n" +
+                "Incredible achievement! You've proven yourself as a true warrior!\n\n" +
+                "📊 Epic Run Summary:\n" +
+                "• Bosses defeated: " + totalBossesDefeated + "\n" +
+                "• Worlds conquered: 4 complete worlds!\n" +
+                "💰 Coins earned: " + coinsEarnedThisRun + " (with 4x world multipliers)\n\n" +
+                "🎖️ The King has taken notice of your incredible prowess...\n\n" +
+                "⭐ A special message awaits you!";
+
+        new AlertDialog.Builder(this)
+                .setTitle("🌟 LEGENDARY ACHIEVEMENT! 🌟")
+                .setMessage(message)
+                .setPositiveButton("Receive Royal Message", (dialog, which) -> {
+                    // NOW show the story after rewards are acknowledged
+                    Intent storyIntent = new Intent(GameActivity.this, StoryActivity.class);
+                    storyIntent.putExtra("story_type", "WORLD4_COMPLETION");
+                    startActivity(storyIntent);
+
+                    // End the current game session
+                    finish();
+                })
+                .setCancelable(false) // Player must acknowledge their achievement
+                .show();
     }
 
 
