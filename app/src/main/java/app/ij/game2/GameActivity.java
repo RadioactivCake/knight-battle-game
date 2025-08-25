@@ -162,9 +162,10 @@ public class GameActivity extends AppCompatActivity {
         surrenderButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!gameOver) {
+                if (canSurrender()) {
                     showSurrenderDialog();
                 }
+                // Silent when surrender is not available - no feedback needed
             }
         });
     }
@@ -421,8 +422,7 @@ public class GameActivity extends AppCompatActivity {
 
     private void updateButtonStates() {
         if (isPlayerTurn && !gameOver && !isPlayerAnimating) {
-            int currentAttack = player.getAttack(); // This now includes all bonuses
-
+            int currentAttack = player.getAttack();
             int lightDamage = currentAttack / 2;
             int mediumDamage = currentAttack;
 
@@ -430,21 +430,17 @@ public class GameActivity extends AppCompatActivity {
             mediumAttackButton.setText("MEDIUM\n(" + mediumDamage + " damage)");
             heavyAttackButton.setText("HEAVY\n(2x damage or miss)");
 
-            // ENABLE buttons only when it's safe
             enableAttackButtons();
 
-            // Enhanced debug for dual squires
-            PassiveManager pm = player.getPassiveManager();
-            if (pm.getActivePassives().size() > 0) {
-                android.util.Log.d("BattleUI", "Active passives from " + pm.getActivePassives().size() + " squires:");
-                for (int i = 0; i < pm.getActivePassives().size(); i++) {
-                    Knight.PassiveEffect passive = pm.getActivePassives().get(i);
-                    android.util.Log.d("BattleUI", "  " + (i+1) + ". " + passive.getName() + " = " + (passive.getValue() * 100) + "%");
-                }
-            }
+            // NEW: Enable surrender button when player can act
+            surrenderButton.setEnabled(true);
+            surrenderButton.setAlpha(1.0f);
         } else {
-            // DISABLE buttons when not player's turn or during animations
             disableAttackButtons();
+
+            // NEW: Disable surrender button when it's not player's turn or during animations
+            surrenderButton.setEnabled(false);
+            surrenderButton.setAlpha(0.5f); // Make it look disabled
         }
     }
 
@@ -1513,6 +1509,14 @@ public class GameActivity extends AppCompatActivity {
                 originalPassive.getValue() * 2.0f, // Double the effect
                 originalPassive.getPassiveType()
         );
+    }
+
+    private boolean canSurrender() {
+        // Can only surrender when:
+        // 1. Game is not over
+        // 2. It's player's turn
+        // 3. Player is not currently animating (hasn't chosen an attack yet)
+        return !gameOver && isPlayerTurn && !isPlayerAnimating;
     }
 
 

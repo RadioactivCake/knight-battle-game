@@ -27,8 +27,7 @@
         android:clipChildren="false"
         android:clipToPadding="false"
         android:padding="16dp"
-        android:paddingTop="40dp"
-        android:paddingBottom="120dp">
+        android:paddingTop="40dp">
 
         <!-- Player Character Area - Left Side -->
         <LinearLayout
@@ -37,6 +36,7 @@
             android:layout_weight="1"
             android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
+            android:layout_marginBottom="-25dp"
             android:clipChildren="false"
             android:clipToPadding="false">
 
@@ -70,6 +70,7 @@
             android:layout_weight="1"
             android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
+            android:layout_marginBottom="-10dp"
             android:clipChildren="false"
             android:clipToPadding="false">
 
@@ -351,6 +352,6 @@
         android:clickable="true"
         android:focusable="true"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="90dp" />
 
 </FrameLayout>
