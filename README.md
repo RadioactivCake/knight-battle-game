@@ -5,7 +5,7 @@
 ## 📋 Project Overview
 - **Platform**: Android (Java)
 - **Type**: Turn-based RPG with collection mechanics
-- **Current Status**: Fully functional with knight collection, battle system, chest opening, squire mechanics, event system, dual squire support, enhanced animations, and automated documentation
+- **Current Status**: Fully functional with knight collection, battle system, chest opening, squire mechanics, event system, dual squire support, enhanced animations, strategic surrender system, proper UI layering, and automated documentation
 
 ---
 
@@ -73,6 +73,7 @@ This automation eliminates manual PDF generation while providing seamless access
 13. **EventDatabase** - Event management and probability
 14. **Trait** - Individual knight enhancement data model
 15. **TraitDatabase** - Trait data storage and rolling system
+
 ---
 
 ## ⚔️ Game Systems
@@ -131,6 +132,7 @@ This automation eliminates manual PDF generation while providing seamless access
 - **Scaling Difficulty**: Each world starts with 2x final boss stats from previous world
 - **Coin System**: 10 coins per regular boss, 60 coins for mini boss (stage 5)
 - **Surrender Option**: Keep coins when surrendering, lose all when dying
+- **Strategic Surrender**: Can only surrender on player's turn before choosing attack
 - **Enhanced Animations**: Both player and enemy attack animations with proper timing
 - **Enemy Stunning**: Light attacks can stun enemies, causing them to skip their turn
 - **Attack Spam Prevention**: Buttons disabled during animations and enemy turns to prevent exploitation
@@ -139,6 +141,7 @@ This automation eliminates manual PDF generation while providing seamless access
   - Compact view shows Guru indicator (🎭) when active
   - Detailed view shows original → doubled passive values for Guru traits
   - Lonely trait effects clearly labeled in fighter section
+- **Proper UI Layering**: Knight heads appear behind info cards when expanded
 **Enhanced Coin System**:
 - **Base Rewards**: 10 coins (regular enemy), 60 coins (mini boss)
 - **World Multipliers**: All coins multiplied by current world number
@@ -411,6 +414,50 @@ String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "
 - **Full-Screen Scrolling**: Story content fills screen, button appears after scrolling
 - **Thematic Design**: Dark background with gold titles and white text
 - **Progress Integration**: Stories unlock based on actual game achievements
+
+### 16. Strategic Surrender System (NEW)
+**Tactical surrender mechanics that require strategic timing and prevent exploitation.**
+
+**Surrender Restrictions**:
+- **Turn-Based**: Can only surrender during player's turn (not during enemy actions)
+- **Pre-Attack**: Must surrender before choosing an attack (no takebacks after committing)
+- **Visual Feedback**: Button dims when surrender unavailable (50% alpha)
+- **Silent Blocking**: No toast messages when surrender blocked - clean UX
+
+**Technical Implementation**:
+```java
+private boolean canSurrender() {
+    return !gameOver && isPlayerTurn && !isPlayerAnimating;
+}
+```
+Strategic Impact:
+
+Commitment Required: Players must fully commit to attack choices
+Planning Phase: Surrender available during decision-making, not mid-action
+Risk Management: Encourages careful consideration before attacking
+Anti-Exploitation: Prevents "attack spam then surrender" cheese tactics
+
+17. Layout Z-Order System (TECHNICAL)
+Proper visual layering ensures UI elements render correctly without obstruction.
+Dual LinearLayout Architecture:
+
+Character Layer: Renders first (behind everything else)
+UI Layer: Renders second (on top of characters)
+Z-Order Management: Proper layering without performance-heavy elevation tricks
+Visual Result: Knight heads appear behind blue info cards when expanded
+
+Technical Changes:
+xml<!-- FIRST: Character Images (render behind everything) -->
+<LinearLayout>...</LinearLayout>
+
+<!-- SECOND: UI Elements (render on top of characters) -->  
+<LinearLayout>...</LinearLayout>
+Character Positioning:
+
+Player Knight: android:layout_marginBottom="-25dp"
+Enemy Character: android:layout_marginBottom="-10dp"
+Layout Integrity: Maintains original visual design while fixing z-order
+
 ---
 
 ## 🗃️ Database Structure
@@ -459,6 +506,7 @@ KNIGHT_DATA.put("divine_warrior", new KnightData(
 - Evolved knights get 1.5x to 2x stronger passive abilities
 - Evolution requires 11 copies (10 duplicates) of the base knight
 - Evolved knights start fresh with quantity 1 and can collect duplicates again
+
 ---
 
 ## 🎨 Image System
@@ -614,6 +662,15 @@ private String findCorrectKnightName(String oldName) {
 ### 11. Ultimate Evolution Deletion Bug (FIXED)
 **Problem**: Ultimate evolution completely removed Evolved Axolotl Knight from collection
 **Solution**: Fixed evolution to keep the knight at quantity 1 (consistent with normal evolution behavior)
+
+### 12. Passive Text Visibility (FIXED)
+**Problem**: Knight head appeared in front of passive info card when expanded
+**Solution**: Restructured XML layout with dual LinearLayout system for proper z-ordering
+
+### 13. Surrender Button Positioning (FIXED)
+**Problem**: Surrender button overlapped heavy attack button
+**Solution**: Moved surrender button above attack buttons with android:layout_marginBottom="90dp"
+
 ---
 
 ## 🎯 Strategic Meta Evolution
@@ -685,6 +742,8 @@ private String findCorrectKnightName(String oldName) {
 - Progress tracking with furthest achievement display
 - Collapsible passive display in battle (click to expand/collapse squire info)
 - Attack spam prevention system
+- Strategic surrender system with turn-based restrictions (NEW)
+- Proper UI layering with knight heads behind info cards (FIXED)
 
 ### 🔄 Recent Updates:
 - **ADDED Complete Story System** - Prolog introduction and World 4 completion narrative
@@ -694,6 +753,9 @@ private String findCorrectKnightName(String oldName) {
 - **ENHANCED Chapter Navigation** - "Prolog" tab for main knights, clear story progression
 - **PREPARED Database Integration** - Axolotl Lord ready for future Chapter 1 chest system
 - **CREATED Story Architecture** - Expandable system for future chapters and narrative content
+- **IMPLEMENTED Strategic Surrender** - Turn-based surrender restrictions prevent exploitation
+- **FIXED UI Z-Order Issues** - Knight heads now properly appear behind info cards when expanded
+- **ENHANCED Battle Interface** - Improved button positioning and visual layering for better UX
 
 ---
 
@@ -773,5 +835,6 @@ private String findCorrectKnightName(String oldName) {
 - Hebrew locale emulator testing
 - Developer options "Force RTL layout direction"
 - Physical device language switching to Hebrew (עברית)
+
 ---
 >:D
