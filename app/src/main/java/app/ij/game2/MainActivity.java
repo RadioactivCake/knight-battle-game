@@ -9,6 +9,10 @@ import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;  // ADD THIS LINE
+import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+import android.widget.LinearLayout;
 public class MainActivity extends AppCompatActivity {
 
     private Button playButton, collectionButton, chestButton, profileButton;
@@ -16,6 +20,11 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private static boolean isFirstTime = true; // Track if this is first app launch
     private TextView progressDisplay;
+    private ViewPager2 chapterViewPager;
+    private ChapterPagerAdapter pagerAdapter;
+    private TabLayout chapterTabs;
+    private LinearLayout dotIndicatorContainer;
+    private View[] dotIndicators;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,14 +33,8 @@ public class MainActivity extends AppCompatActivity {
         // Hide navigation bar and make fullscreen
         hideSystemUI();
 
-        setContentView(R.layout.activity_main);
-
-        playButton = findViewById(R.id.playButton);
-        collectionButton = findViewById(R.id.collectionButton);
-        chestButton = findViewById(R.id.chestButton);
-        profileButton = findViewById(R.id.profileButton);
-        coinDisplay = findViewById(R.id.coinDisplay);
-        progressDisplay = findViewById(R.id.progressDisplay);
+        // CHANGED: Use new layout with ViewPager
+        setContentView(R.layout.activity_main_with_chapters);
 
         // Initialize SharedPreferences for saving coins
         sharedPreferences = getSharedPreferences("GameData", MODE_PRIVATE);
@@ -44,42 +47,9 @@ public class MainActivity extends AppCompatActivity {
 
         updateKnightStats();
         fixDuplicateKnights();
-        // Load and display current coins
-        updateCoinDisplay();
-        updateProgressDisplay(); // Add this line
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TESTING: Always show opening story
-                Intent storyIntent = new Intent(MainActivity.this, StoryActivity.class);
-                storyIntent.putExtra("story_type", "OPENING");
-                startActivity(storyIntent);
-            }
-        });
 
-        collectionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, CollectionActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        chestButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ChestActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        profileButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                startActivity(intent);
-            }
-        });
+        // NEW: Initialize chapter system
+        initializeChapterSystem();
 
         showAppIntroMessage();
     }
@@ -106,10 +76,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Update coin display when returning from game
-        updateCoinDisplay();
-        updateProgressDisplay();
+        // Update chapter access when returning from other activities
+        if (chapterViewPager != null) {
+            updateChapterAccess();
 
+            // Refresh the current fragment
+            if (pagerAdapter != null) {
+                pagerAdapter.notifyDataSetChanged();
+            }
+        }
     }
 
     private void updateCoinDisplay() {
@@ -429,6 +404,87 @@ public class MainActivity extends AppCompatActivity {
     private void updateProgressDisplay() {
         String bestProgressText = sharedPreferences.getString("furthest_progress_text", "World 1 - Stage 1");
         progressDisplay.setText("🏆 Best: " + bestProgressText);
+    }
+
+    private void initializeChapterSystem() {
+        // Find ViewPager and dot container
+        chapterViewPager = findViewById(R.id.chapterViewPager);
+        dotIndicatorContainer = findViewById(R.id.dotIndicatorContainer);
+
+        // Create adapter
+        pagerAdapter = new ChapterPagerAdapter(this, sharedPreferences);
+        chapterViewPager.setAdapter(pagerAdapter);
+
+        // Create dot indicators
+        createDotIndicators();
+
+        // Set up page change listener for dots
+        chapterViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                updateDotIndicators(position);
+            }
+        });
+
+        // Update chapter access based on player progress
+        updateChapterAccess();
+    }
+
+    private void updateChapterAccess() {
+        // Check if Axolotl Lord is unlocked
+        String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
+        boolean hasAxolotlLord = chapter1Knights.contains("Axolotl Lord");
+
+        // Make Chapter 1 dot semi-transparent if locked
+        if (dotIndicators != null && dotIndicators.length > 1) {
+            if (!hasAxolotlLord) {
+                dotIndicators[1].setAlpha(0.3f); // Dim the Chapter 1 dot
+            } else {
+                dotIndicators[1].setAlpha(1.0f); // Full brightness when unlocked
+            }
+        }
+    }
+
+    private void createDotIndicators() {
+        int pageCount = pagerAdapter.getItemCount();
+        dotIndicators = new View[pageCount];
+
+        for (int i = 0; i < pageCount; i++) {
+            View dot = new View(this);
+
+            // Create circular dot
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(24, 24);
+            params.setMargins(8, 0, 8, 0);
+            dot.setLayoutParams(params);
+
+            // Make it circular
+            dot.setBackground(createDotDrawable(false));
+
+            dotIndicators[i] = dot;
+            dotIndicatorContainer.addView(dot);
+        }
+
+        // Set first dot as active
+        updateDotIndicators(0);
+    }
+
+    private android.graphics.drawable.Drawable createDotDrawable(boolean isActive) {
+        android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
+        drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+
+        if (isActive) {
+            drawable.setColor(0xFFFFD700); // Gold for active
+        } else {
+            drawable.setColor(0x66FFFFFF); // Semi-transparent white for inactive
+        }
+
+        return drawable;
+    }
+
+    private void updateDotIndicators(int activePosition) {
+        for (int i = 0; i < dotIndicators.length; i++) {
+            dotIndicators[i].setBackground(createDotDrawable(i == activePosition));
+        }
     }
 
 

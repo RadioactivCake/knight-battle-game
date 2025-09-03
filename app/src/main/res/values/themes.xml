@@ -6,4 +6,12 @@
     </style>
 
     <style name="Theme.Game" parent="Base.Theme.Game" />
+
+    <!-- REPLACE WITH THIS SIMPLER VERSION -->
+    <style name="CustomTabText">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
 </resources>

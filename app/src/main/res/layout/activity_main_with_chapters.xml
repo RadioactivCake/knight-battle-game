@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/aapt"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Background Image that fills entire screen -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/lobby_background_image"
+            android:scaleType="centerCrop"
+            android:contentDescription="Main Background" />
+
+        <!-- Content on top of background -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- REMOVE THE OLD TABLAYOUT COMPLETELY -->
+
+            <!-- Swipeable Chapter Content (takes full screen now) -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/chapterViewPager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
+
+        <!-- NEW: Dot Indicators at bottom (like phone home screen) -->
+        <LinearLayout
+            android:id="@+id/dotIndicatorContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="20dp"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:background="#44000000">
+
+            <!-- Dots will be added programmatically -->
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

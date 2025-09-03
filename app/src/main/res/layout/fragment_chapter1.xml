@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1a1a2e"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="40dp">
+
+        <TextView
+            android:id="@+id/chapterStatusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading Chapter 1..."
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.5"
+            android:scrollbars="vertical" />
+
+    </LinearLayout>
+
+</ScrollView>
