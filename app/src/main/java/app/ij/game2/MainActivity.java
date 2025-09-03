@@ -431,18 +431,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateChapterAccess() {
-        // Check if Axolotl Lord is unlocked
+        // Check if ALL requirements are met for Chapter 1
         String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
         boolean hasAxolotlLord = chapter1Knights.contains("Axolotl Lord");
+        boolean hasCompletedProlog = hasPlayerCompletedProlog();
+
+        boolean isChapter1Unlocked = hasAxolotlLord && hasCompletedProlog;
 
         // Make Chapter 1 dot semi-transparent if locked
         if (dotIndicators != null && dotIndicators.length > 1) {
-            if (!hasAxolotlLord) {
+            if (!isChapter1Unlocked) {
                 dotIndicators[1].setAlpha(0.3f); // Dim the Chapter 1 dot
             } else {
                 dotIndicators[1].setAlpha(1.0f); // Full brightness when unlocked
             }
         }
+    }
+
+    private boolean hasPlayerCompletedProlog() {
+        String progressText = sharedPreferences.getString("furthest_progress_text", "World 1 - Stage 1");
+
+        // Add debug logging
+        android.util.Log.d("PrologDebug", "Progress text: '" + progressText + "'");
+
+        if (progressText.startsWith("World ")) {
+            try {
+                String worldPart = progressText.substring(6);
+                String[] parts = worldPart.split(" - Stage ");
+
+                int worldNumber = Integer.parseInt(parts[0]);
+                int stageNumber = Integer.parseInt(parts[1]);
+
+                android.util.Log.d("PrologDebug", "Extracted: World " + worldNumber + ", Stage " + stageNumber);
+
+                // Check if completed World 4 Stage 5 (the mini boss)
+                boolean completed = (worldNumber > 4) || (worldNumber == 4 && stageNumber >= 5);
+
+                android.util.Log.d("PrologDebug", "Prolog completed? " + completed);
+
+                return completed;
+            } catch (Exception e) {
+                android.util.Log.d("PrologDebug", "Error parsing: " + e.getMessage());
+                return false;
+            }
+        }
+
+        android.util.Log.d("PrologDebug", "Progress text doesn't start with 'World'");
+        return false;
     }
 
     private void createDotIndicators() {

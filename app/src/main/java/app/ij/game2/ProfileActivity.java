@@ -124,6 +124,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+
     private void updateFullNameDisplay() {
         String name = nameInput.getText().toString().trim();
         String title = (String) titleSpinner.getSelectedItem();
@@ -157,9 +158,15 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // NEW: Check for money cheat code
+        // Check for money cheat code
         if (name.equals("money") && title.equals("Great")) {
             activateMoneyCheat();
+            return;
+        }
+
+        // NEW: Check for Axolotl Lord cheat code
+        if (name.equals("axolotl") && title.equals("Slayer")) {
+            activateAxolotlLordCheat();
             return;
         }
 
@@ -237,6 +244,42 @@ public class ProfileActivity extends AppCompatActivity {
             finish();
         } else {
             Toast.makeText(this, "Failed to activate money cheat!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void activateAxolotlLordCheat() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Change name from axolotl to player (similar to other cheats)
+        editor.putString("player_name", "Player");
+        editor.putString("player_title", "Great");
+
+        // Add Axolotl Lord to Chapter 1 knights
+        String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
+        if (!chapter1Knights.contains("Axolotl Lord")) {
+            if (chapter1Knights.isEmpty()) {
+                chapter1Knights = "Axolotl Lord";
+            } else {
+                chapter1Knights += ",Axolotl Lord";
+            }
+            editor.putString("owned_chapter1_knights", chapter1Knights);
+        }
+
+        // Set Axolotl Lord stats
+        editor.putInt("Axolotl Lord_hp", 800);
+        editor.putInt("Axolotl Lord_attack", 200);
+        editor.putInt("Axolotl Lord_quantity", 1);
+        editor.putString("Axolotl Lord_image", "player_character");
+
+
+        boolean saved = editor.commit();
+
+        if (saved) {
+            Toast.makeText(this, "🏆 Axolotl Lord cheat activated! Chapter 1 unlocked!", Toast.LENGTH_LONG).show();
+            android.util.Log.d("AxolotlCheat", "Axolotl Lord added to Chapter 1 collection");
+            finish();
+        } else {
+            Toast.makeText(this, "Failed to activate Axolotl Lord cheat!", Toast.LENGTH_SHORT).show();
         }
     }
 }

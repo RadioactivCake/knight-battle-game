@@ -1,28 +1,152 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#1a1a2e"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
 
+    <!-- Locked Layout (Simple, No Scrolling) -->
     <LinearLayout
+        android:id="@+id/lockedLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center"
-        android:padding="40dp">
+        android:padding="40dp"
+        android:background="#1a1a2e"
+        android:visibility="gone">
 
         <TextView
-            android:id="@+id/chapterStatusText"
+            android:id="@+id/lockMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Loading Chapter 1..."
+            android:text=""
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:gravity="center"
-            android:lineSpacingMultiplier="1.5"
-            android:scrollbars="vertical" />
+            android:lineSpacingMultiplier="1.5" />
 
     </LinearLayout>
 
-</ScrollView>
+    <!-- Unlocked Layout (Chapter 1 Lobby) -->
+    <LinearLayout
+        android:id="@+id/unlockedLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:paddingBottom="80dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TACTICAL WARFARE"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#FFD700"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="3"
+            android:shadowDy="3"
+            android:shadowRadius="1"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif-black" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Heroes of Might and Magic Style"
+            android:textSize="14sp"
+            android:textColor="#FFD700"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="1"
+            android:layout_marginBottom="40dp"
+            android:alpha="0.9" />
+
+        <!-- REMOVED: Axolotl Lord Display -->
+
+        <!-- Main Action Buttons - Moved up with more spacing -->
+        <Button
+            android:id="@+id/tacticalBattleButton"
+            android:layout_width="220dp"
+            android:layout_height="60dp"
+            android:text="🏰 TACTICAL BATTLE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:background="@drawable/attack_button_style"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/chapter1CollectionButton"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:text="📜 ARMY ROSTER"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="@drawable/button_style"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/chapter1ChestButton"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:text="⚔️ ARMORY"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="@drawable/button_style"
+            android:textColor="@android:color/white"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+
+    <!-- Chapter 1 Profile Button - Top Left -->
+    <Button
+        android:id="@+id/chapter1ProfileButton"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="start|top"
+        android:layout_margin="16dp"
+        android:text="⚔️"
+        android:textSize="24sp"
+        android:background="@drawable/circle_button_style"
+        android:textColor="#FFFFFF" />
+
+    <!-- Chapter 1 Coin Display - Top Right -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:layout_margin="16dp"
+        android:background="@drawable/button_style"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💰"
+            android:textSize="20sp"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:id="@+id/chapter1CoinDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="1" />
+
+    </LinearLayout>
+
+</FrameLayout>
