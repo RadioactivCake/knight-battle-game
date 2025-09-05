@@ -17,7 +17,6 @@ import java.util.List;
 
 public class CollectionActivity extends AppCompatActivity {
 
-    private Button chapterMainButton, chapter1Button;
     private String currentChapter = "MAIN"; // Track current chapter
     private LinearLayout knightContainer, filterContainer;
     private Button backButton, massEvolveButton;
@@ -31,12 +30,14 @@ public class CollectionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Hide navigation bar and make fullscreen
         hideSystemUI();
-
         setContentView(R.layout.activity_collection);
 
         sharedPreferences = getSharedPreferences("GameData", MODE_PRIVATE);
+
+        // Get chapter from intent (default to MAIN for backwards compatibility)
+        String targetChapter = getIntent().getStringExtra("target_chapter");
+        currentChapter = targetChapter != null ? targetChapter : "MAIN";
 
         initializeUI();
         loadKnights();
@@ -74,8 +75,6 @@ public class CollectionActivity extends AppCompatActivity {
         filterEpicButton = findViewById(R.id.filterEpicButton);
         filterEvolvedButton = findViewById(R.id.filterEvolvedButton);
         filterLegendaryButton = findViewById(R.id.filterLegendaryButton);
-        chapterMainButton = findViewById(R.id.chapterMainButton);
-        chapter1Button = findViewById(R.id.chapter1Button);
 
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -98,11 +97,10 @@ public class CollectionActivity extends AppCompatActivity {
         filterEpicButton.setOnClickListener(v -> applyFilter("EPIC"));
         filterEvolvedButton.setOnClickListener(v -> applyFilter("EVOLVED"));
         filterLegendaryButton.setOnClickListener(v -> applyFilter("LEGENDARY"));
-        chapterMainButton.setOnClickListener(v -> switchToChapter("MAIN"));
-        chapter1Button.setOnClickListener(v -> switchToChapter("CHAPTER1"));
+
         // Set initial filter state
         updateFilterButtons();
-        updateChapterButtons();
+
 
     }
 
@@ -110,22 +108,109 @@ public class CollectionActivity extends AppCompatActivity {
 
     // Replace the loadKnights() method in CollectionActivity:
 
+    // Update loadKnights to handle chapters separately
     private void loadKnights() {
         allKnights = new ArrayList<>();
 
-        // Get owned knights from preferences
-        String ownedKnights = sharedPreferences.getString("owned_knights", "Brave Knight");
-        String ownedChapter1Knights = sharedPreferences.getString("owned_chapter1_knights", ""); // NEW
-        String[] knightNames;
-
-        // Determine which knights to load based on current chapter
         if (currentChapter.equals("CHAPTER1")) {
-            knightNames = ownedChapter1Knights.isEmpty() ? new String[0] : ownedChapter1Knights.split(",");
+            loadChapter1KnightsOnly();
         } else {
-            knightNames = ownedKnights.split(",");
+            loadMainChapterKnightsOnly();
         }
 
-        // Get equipped knight and squire (for main chapter only)
+        // Apply current filter
+        applyCurrentFilter();
+    }
+
+    private void loadMainChapterKnightsOnly() {
+        // Get equipped knight and squire for main chapter
+        String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
+        String equippedSquire = sharedPreferences.getString("equipped_squire", "");
+
+        // Load from main knights storage only
+        String ownedKnights = sharedPreferences.getString("owned_knights", "Brave Knight");
+        String[] knightNames = ownedKnights.split(",");
+
+        for (String knightName : knightNames) {
+            knightName = knightName.trim();
+            if (knightName.isEmpty()) continue;
+
+            loadMainChapterKnight(knightName, equippedKnight, equippedSquire);
+        }
+    }
+
+    private void loadChapter1KnightsOnly() {
+        String ownedChapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
+        if (ownedChapter1Knights.isEmpty()) {
+            return;
+        }
+
+        String[] knightNames = ownedChapter1Knights.split(",");
+        for (String knightName : knightNames) {
+            knightName = knightName.trim();
+            if (knightName.isEmpty()) continue;
+
+            loadTacticalKnight(knightName);
+        }
+    }
+
+    private void loadTacticalKnight(String knightName) {
+        TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(knightName);
+
+        if (data != null) {
+            TacticalKnight tacticalKnight = new TacticalKnight(
+                    data.name, data.hp, data.attack, data.speed,
+                    data.actions, data.movementStyle, data.attackStyle
+            );
+
+            tacticalKnight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
+            // REMOVED: loadKnightTrait(tacticalKnight); // No traits for Chapter 1
+
+            Knight displayKnight = convertTacticalToDisplayKnight(tacticalKnight);
+            allKnights.add(displayKnight);
+        }
+    }
+
+    private Knight convertTacticalToDisplayKnight(TacticalKnight tactical) {
+        // Create a display knight that shows tactical stats
+        Knight displayKnight = new Knight(tactical.getName(), tactical.getHp(),
+                tactical.getAttack(), "player_character");
+        displayKnight.setQuantity(tactical.getQuantity());
+        if (tactical.hasTrait()) {
+            displayKnight.setTrait(tactical.getTrait());
+        }
+        return displayKnight;
+    }
+
+    private void loadKnightTrait(TacticalKnight knight) {
+        String traitName = sharedPreferences.getString(knight.getName() + "_trait", "");
+        if (!traitName.isEmpty()) {
+            Trait trait = TraitDatabase.getTraitByName(traitName);
+            if (trait != null) {
+                knight.setTrait(trait);
+            }
+        }
+    }
+
+
+    private void loadChapter1Knights() {
+        String ownedChapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
+        if (ownedChapter1Knights.isEmpty()) {
+            return;
+        }
+
+        String[] knightNames = ownedChapter1Knights.split(",");
+        for (String knightName : knightNames) {
+            knightName = knightName.trim();
+            if (knightName.isEmpty()) continue;
+
+            loadChapter1Knight(knightName);
+        }
+    }
+
+    private void loadMainChapterKnights() {
+        String ownedKnights = sharedPreferences.getString("owned_knights", "Brave Knight");
+        String[] knightNames = ownedKnights.split(",");
         String equippedKnight = sharedPreferences.getString("equipped_knight", "Brave Knight");
         String equippedSquire = sharedPreferences.getString("equipped_squire", "");
 
@@ -133,17 +218,8 @@ public class CollectionActivity extends AppCompatActivity {
             knightName = knightName.trim();
             if (knightName.isEmpty()) continue;
 
-            if (currentChapter.equals("CHAPTER1")) {
-                // Load Chapter 1 knights (special handling)
-                loadChapter1Knight(knightName);
-            } else {
-                // Load main chapter knights (existing logic)
-                loadMainChapterKnight(knightName, equippedKnight, equippedSquire);
-            }
+            loadMainChapterKnight(knightName, equippedKnight, equippedSquire);
         }
-
-        // Apply current filter to set the displayed knights
-        applyCurrentFilter();
     }
 
     private void loadChapter1Knight(String knightName) {
@@ -267,6 +343,14 @@ public class CollectionActivity extends AppCompatActivity {
     }
 
     private View createKnightView(Knight knight) {
+        if (currentChapter != null && currentChapter.equals("CHAPTER1")) {
+            return createTacticalKnightView(knight);
+        } else {
+            return createMainChapterKnightView(knight);
+        }
+    }
+
+    private View createMainChapterKnightView(Knight knight) {
         // Create knight card container
         LinearLayout knightCard = new LinearLayout(this);
         knightCard.setOrientation(LinearLayout.HORIZONTAL);
@@ -490,6 +574,80 @@ public class CollectionActivity extends AppCompatActivity {
                 showKnightDetails(knight);
             }
         });
+
+        return knightCard;
+    }
+
+    // New tactical knight card:
+    private View createTacticalKnightView(Knight knight) {
+        // Get tactical data
+        TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(knight.getName());
+
+        LinearLayout knightCard = new LinearLayout(this);
+        knightCard.setOrientation(LinearLayout.HORIZONTAL);
+        knightCard.setBackgroundColor(0xFF2C3E50); // Tactical blue-gray
+        knightCard.setPadding(20, 20, 20, 20);
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.setMargins(0, 0, 0, 20);
+        knightCard.setLayoutParams(cardParams);
+
+        // Knight image
+        ImageView knightImage = new ImageView(this);
+        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(120, 150);
+        imageParams.setMargins(0, 0, 20, 0);
+        knightImage.setLayoutParams(imageParams);
+        knightImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        knightImage.setImageResource(R.drawable.player_character);
+
+        // Info container
+        LinearLayout infoContainer = new LinearLayout(this);
+        infoContainer.setOrientation(LinearLayout.VERTICAL);
+        infoContainer.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+        // Knight name
+        TextView nameText = new TextView(this);
+        nameText.setText(knight.getName());
+        nameText.setTextSize(18);
+        nameText.setTextColor(getResources().getColor(android.R.color.white));
+        nameText.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        // Tactical stats
+        TextView tacticalStatsText = new TextView(this);
+        if (data != null) {
+            String statsString = "HP: " + data.hp + " | ATK: " + data.attack + " | SPD: " + data.speed +
+                    "\nActions: " + data.actions + " | " + data.movementStyle.description +
+                    "\nAttack: " + data.attackStyle.description;
+            tacticalStatsText.setText(statsString);
+        }
+        tacticalStatsText.setTextSize(12);
+        tacticalStatsText.setTextColor(getResources().getColor(android.R.color.white));
+
+        // Deployment status
+        TextView deploymentText = new TextView(this);
+        String currentSlot = getCurrentSlotAssignment(knight.getName());
+        if (!currentSlot.isEmpty()) {
+            deploymentText.setText("⚔️ " + currentSlot);
+            deploymentText.setTextColor(0xFFFFD700); // Gold
+        } else {
+            deploymentText.setText("📋 Available for deployment");
+            deploymentText.setTextColor(0xFFCCCCCC); // Gray
+        }
+        deploymentText.setTextSize(12);
+
+        // Add to info container
+        infoContainer.addView(nameText);
+        infoContainer.addView(tacticalStatsText);
+        infoContainer.addView(deploymentText);
+
+        knightCard.addView(knightImage);
+        knightCard.addView(infoContainer);
+
+        // Click listener
+        knightCard.setOnClickListener(v -> showKnightDetails(knight));
 
         return knightCard;
     }
@@ -869,8 +1027,17 @@ public class CollectionActivity extends AppCompatActivity {
         }
     }
 
-
     private void showKnightDetails(Knight knight) {
+        // Check which chapter collection we're viewing
+        if (currentChapter != null && currentChapter.equals("CHAPTER1")) {
+            showChapter1KnightDetails(knight);
+        } else {
+            showMainChapterKnightDetails(knight);
+        }
+    }
+
+
+    private void showMainChapterKnightDetails(Knight knight) {
         String message = "Name: " + knight.getName() + "\n\n";
 
         // Show detailed stats breakdown
@@ -887,6 +1054,20 @@ public class CollectionActivity extends AppCompatActivity {
         String equippedSquire2 = sharedPreferences.getString("equipped_squire2", "");
         boolean hasKingsBlessing = sharedPreferences.getBoolean("has_kings_blessing", false);
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Knight Details");
+
+        // BLOCK AXOLOTL LORD from being equipped in prolog
+        if (knight.getName().equals("Axolotl Lord")) {
+            message += "⚔️ CHAPTER 1 EXCLUSIVE\n";
+            message += "This knight can only be used in Chapter 1 tactical battles.";
+            builder.setMessage(message);
+            builder.setPositiveButton("Close", null);
+            builder.show();
+            return;
+        }
+
+        // Regular equipment logic for all other knights
         if (knight.getName().equals(equippedKnightName)) {
             message += "⚔️ Currently equipped as FIGHTER!";
         } else if (knight.getName().equals(equippedSquire)) {
@@ -897,39 +1078,55 @@ public class CollectionActivity extends AppCompatActivity {
             message += "Equip this knight?";
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Knight Details");
         builder.setMessage(message);
 
-        // Add equipment buttons (existing logic)
+        // Add equipment buttons (existing logic) - but NOT for Axolotl Lord
         if (!knight.getName().equals(equippedKnightName)) {
             builder.setPositiveButton("Equip as Fighter", (dialog, which) -> {
                 equipKnight(knight);
             });
         }
 
-        if (!knight.getName().equals(equippedSquire) && !knight.getName().equals(equippedKnightName)) {
-            builder.setNeutralButton("Equip as Squire", (dialog, which) -> {
-                equipSquire(knight);
-            });
+        // Rest of existing button logic...
+        builder.show();
+    }
+
+    private void showChapter1KnightDetails(Knight knight) {
+        // Load the tactical version for full stats
+        TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(knight.getName());
+
+        String message = "Name: " + knight.getName() + "\n\n";
+
+        if (data != null) {
+            // Show tactical stats
+            message += "HP: " + data.hp + "\n";
+            message += "Attack: " + data.attack + "\n";
+            message += "Speed: " + data.speed + " (turn order)\n";
+            message += "Actions: " + data.actions + " per turn\n";
+            message += "Movement: " + data.movementStyle.description + "\n";
+            message += "Attack Style: " + data.attackStyle.description + "\n\n";
         }
 
-        if (hasKingsBlessing && !knight.getName().equals(equippedSquire2) &&
-                !knight.getName().equals(equippedKnightName) && !knight.getName().equals(equippedSquire)) {
-
-            builder.setNegativeButton("Equip as 2nd Squire", (dialog, which) -> {
-                equipSecondSquire(knight);
-            });
+        // Show trait if any
+        if (knight.hasTrait()) {
+            message += "Trait: " + knight.getTrait().getDisplayString() + "\n\n";
         }
 
-        if (knight.getName().equals(equippedKnightName) ||
-                (!hasKingsBlessing && (knight.getName().equals(equippedSquire))) ||
-                (hasKingsBlessing && knight.getName().equals(equippedSquire) && knight.getName().equals(equippedSquire2))) {
-            builder.setNegativeButton("Close", null);
-        } else if (!hasKingsBlessing) {
-            builder.setNegativeButton("Close", null);
+        // Show deployment status
+        String currentSlot = getCurrentSlotAssignment(knight.getName());
+        if (!currentSlot.isEmpty()) {
+            message += "Deployed in: " + currentSlot;
+        } else {
+            message += "Available for deployment";
         }
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Tactical Unit");
+        builder.setMessage(message);
+        builder.setPositiveButton("Manage Deployment", (dialog, which) -> {
+            showSlotManagement(knight);
+        });
+        builder.setNegativeButton("Close", null);
         builder.show();
     }
 
@@ -1066,37 +1263,9 @@ public class CollectionActivity extends AppCompatActivity {
         }
     }
 
-    private void switchToChapter(String chapter) {
-        currentChapter = chapter;
-        currentFilter = "ALL"; // Reset filter when switching chapters
 
-        updateChapterButtons();
-        updateFilterButtons();
-        loadKnights();
-        displayKnights();
 
-        android.util.Log.d("ChapterSystem", "Switched to chapter: " + chapter);
-    }
 
-    private void updateChapterButtons() {
-        // Reset all chapter button backgrounds
-        chapterMainButton.setBackgroundColor(0xFF444444);
-        chapterMainButton.setTextColor(0xFFFFFFFF);
-        chapter1Button.setBackgroundColor(0xFF444444);
-        chapter1Button.setTextColor(0xFFFFFFFF);
-
-        // Highlight active chapter
-        switch (currentChapter) {
-            case "MAIN":
-                chapterMainButton.setBackgroundColor(0xFFFFFFFF);
-                chapterMainButton.setTextColor(0xFF000000);
-                break;
-            case "CHAPTER1":
-                chapter1Button.setBackgroundColor(0xFFFFD700); // Gold for special chapter
-                chapter1Button.setTextColor(0xFF000000);
-                break;
-        }
-    }
 
     private void checkForAxolotlLordEvolution(Knight knight) {
         // Check if this is Evolved Axolotl Knight with requirements
@@ -1196,10 +1365,114 @@ public class CollectionActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("🌟 Ultimate Evolution Complete!")
                 .setMessage(message)
-                .setPositiveButton("Enter Chapter 1", (dialog, which) -> {
-                    switchToChapter("CHAPTER1");
-                })
+
                 .setCancelable(false)
                 .show();
     }
+
+    private String getCurrentSlotAssignment(String knightName) {
+        // Check which tactical slot this knight is assigned to
+        for (int i = 1; i <= 5; i++) {
+            String slotKnight = sharedPreferences.getString("chapter1_slot_" + i, "");
+            if (slotKnight.equals(knightName)) {
+                return "Row " + i + " (Tactical Slot " + i + ")";
+            }
+        }
+        return "";
+    }
+
+    private void showSlotManagement(Knight knight) {
+        // Show slot assignment options
+        String currentSlot = getCurrentSlotAssignment(knight.getName());
+
+        String message = "Deploy " + knight.getName() + " to battlefield row:\n\n";
+        message += "Each row represents a starting position on the tactical battlefield.\n\n";
+
+        if (!currentSlot.isEmpty()) {
+            message += "Currently deployed in: " + currentSlot + "\n\n";
+            message += "Select a new row or unassign:";
+        } else {
+            message += "Select a row to deploy to:";
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Battlefield Deployment");
+        builder.setMessage(message);
+
+        // Row assignment buttons
+        builder.setPositiveButton("Row 1", (dialog, which) -> assignToSlot(knight, 1));
+        builder.setNeutralButton("Row 3", (dialog, which) -> assignToSlot(knight, 3));
+        builder.setNegativeButton("Row 5", (dialog, which) -> assignToSlot(knight, 5));
+
+        // Add unassign option if currently assigned
+        if (!currentSlot.isEmpty()) {
+            builder.setNegativeButton("Unassign", (dialog, which) -> unassignFromSlot(knight));
+        }
+
+        builder.show();
+    }
+
+    private void assignToSlot(Knight knight, int slotNumber) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Check if slot is already occupied
+        String currentOccupant = sharedPreferences.getString("chapter1_slot_" + slotNumber, "");
+        if (!currentOccupant.isEmpty() && !currentOccupant.equals(knight.getName())) {
+            // Show confirmation dialog for slot replacement
+            new AlertDialog.Builder(this)
+                    .setTitle("Replace Unit?")
+                    .setMessage("Row " + slotNumber + " is occupied by " + currentOccupant +
+                            ".\n\nReplace with " + knight.getName() + "?")
+                    .setPositiveButton("Replace", (dialog, which) -> {
+                        performSlotAssignment(knight, slotNumber);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            return;
+        }
+
+        performSlotAssignment(knight, slotNumber);
+    }
+
+    private void performSlotAssignment(Knight knight, int slotNumber) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Unassign from any previous slot first
+        unassignFromSlot(knight);
+
+        // Assign to new slot
+        editor.putString("chapter1_slot_" + slotNumber, knight.getName());
+        editor.apply();
+
+        android.util.Log.d("Chapter1Slots", "Assigned " + knight.getName() + " to slot " + slotNumber);
+
+        // Show confirmation
+        Toast.makeText(this, knight.getName() + " deployed to Row " + slotNumber, Toast.LENGTH_SHORT).show();
+
+        // Refresh display to show new assignment
+        loadKnights();
+        displayKnights();
+    }
+
+    private void unassignFromSlot(Knight knight) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        // Find and remove from current slot
+        for (int i = 1; i <= 5; i++) {
+            String slotKnight = sharedPreferences.getString("chapter1_slot_" + i, "");
+            if (slotKnight.equals(knight.getName())) {
+                editor.remove("chapter1_slot_" + i);
+                android.util.Log.d("Chapter1Slots", "Unassigned " + knight.getName() + " from slot " + i);
+                break;
+            }
+        }
+
+        editor.apply();
+
+        // Refresh display
+        loadKnights();
+        displayKnights();
+    }
+
+
 }

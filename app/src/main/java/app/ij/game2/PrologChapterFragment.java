@@ -57,6 +57,7 @@ public class PrologChapterFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getActivity(), CollectionActivity.class);
+                intent.putExtra("target_chapter", "MAIN");
                 startActivity(intent);
             }
         });

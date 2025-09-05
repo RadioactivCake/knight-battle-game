@@ -130,6 +130,7 @@ public class Chapter1Fragment extends Fragment {
     }
 
     private boolean hasAxolotlLord() {
+        // Check Chapter 1 knights storage instead of main collection
         String chapter1Knights = sharedPreferences.getString("owned_chapter1_knights", "");
         return chapter1Knights.contains("Axolotl Lord");
     }
@@ -152,14 +153,14 @@ public class Chapter1Fragment extends Fragment {
 
         // Set up click listeners (same as before)
         tacticalBattleButton.setOnClickListener(v -> {
-            android.widget.Toast.makeText(getActivity(),
-                    "🏰 Tactical Battle System Coming Soon! 🏰",
-                    android.widget.Toast.LENGTH_SHORT).show();
+            // Launch tactical battle system
+            Intent intent = new Intent(getActivity(), TacticalBattleActivity.class);
+            startActivity(intent);
         });
 
         chapter1CollectionButton.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), CollectionActivity.class);
-            intent.putExtra("chapter_filter", "CHAPTER1");
+            intent.putExtra("target_chapter", "CHAPTER1");
             startActivity(intent);
         });
 

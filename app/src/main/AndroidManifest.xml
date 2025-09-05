@@ -59,6 +59,12 @@
             android:exported="false"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <!-- Add this inside the <application> tag -->
+        <activity
+            android:name=".TacticalBattleActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
     </application>
 

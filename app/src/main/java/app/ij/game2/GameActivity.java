@@ -1098,6 +1098,12 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private Knight loadKnightForBattle(String knightName) {
+        // Block Axolotl Lord from prolog battles
+        if (knightName.equals("Axolotl Lord")) {
+            android.util.Log.w("GameActivity", "Axolotl Lord cannot be used in prolog battles");
+            // Fall back to Axolotl Knight instead
+            knightName = "Axolotl Knight";
+        }
         Knight knight = null;
 
         if (knightName.equals("Axolotl Knight")) {
