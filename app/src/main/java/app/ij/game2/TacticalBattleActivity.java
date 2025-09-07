@@ -1,5 +1,8 @@
 package app.ij.game2;
-
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -15,10 +18,11 @@ public class TacticalBattleActivity extends AppCompatActivity {
     private GridLayout battleGrid;
     private Button endTurnButton, retreatButton;
     private SharedPreferences sharedPreferences;
+    private boolean isAnimating = false;
 
     // Battle state
-    private TacticalUnit axolotlLord;
-    private TacticalUnit enemy;
+    private TacticalUnit playerUnit;
+    private TacticalUnit enemyUnit;
     private boolean isPlayerTurn = true;
     private boolean battleOver = false;
 
@@ -64,7 +68,7 @@ public class TacticalBattleActivity extends AppCompatActivity {
 
     private void initializeUI() {
         battleGrid = findViewById(R.id.battleGrid);
-        // REMOVED: turnIndicator, axolotlLordStats, enemyStats
+        // REMOVED: turnIndicator, playerUnitStats, enemyUnitStats
         endTurnButton = findViewById(R.id.endTurnButton);
         retreatButton = findViewById(R.id.retreatButton);
 
@@ -104,62 +108,171 @@ public class TacticalBattleActivity extends AppCompatActivity {
     }
 
     private View createGridTile(final int x, final int y, int tileWidth, int tileHeight) {
-        View tile = new View(this);
+        // Create a FrameLayout to hold both background and image
+        FrameLayout tileContainer = new FrameLayout(this);
 
-        // Set exact calculated tile size with small margins for borders
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = tileWidth - 2;  // Small reduction for border
+        params.width = tileWidth - 2;
         params.height = tileHeight - 2;
-        params.setMargins(1, 1, 1, 1); // 1px margins create border effect
-        tile.setLayoutParams(params);
+        params.setMargins(1, 1, 1, 1);
+        tileContainer.setLayoutParams(params);
 
-        // Tile appearance
-        tile.setBackgroundColor(0xFF4CAF50); // Green tile
+        // Background view for tile color
+        View backgroundTile = new View(this);
+        FrameLayout.LayoutParams bgParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        backgroundTile.setLayoutParams(bgParams);
+        backgroundTile.setBackgroundColor(0xFF4CAF50);
+        backgroundTile.setId(View.generateViewId()); // Give it a unique ID
 
-        tile.setOnClickListener(v -> onTileClicked(x, y));
+        // ImageView for unit sprites
+        ImageView unitImage = new ImageView(this);
+        FrameLayout.LayoutParams imgParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        imgParams.leftMargin = 8;
+        imgParams.topMargin = 8;
+        imgParams.rightMargin = 8;
+        imgParams.bottomMargin = 8;
+        unitImage.setLayoutParams(imgParams);
+        unitImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        unitImage.setVisibility(View.GONE);
+        unitImage.setId(View.generateViewId()); // Give it a unique ID
 
-        return tile;
+        // Add both to container
+        tileContainer.addView(backgroundTile);
+        tileContainer.addView(unitImage);
+
+        tileContainer.setOnClickListener(v -> onTileClicked(x, y));
+
+        return tileContainer;
+    }
+
+    private View getBackgroundTile(FrameLayout tileContainer) {
+        return tileContainer.getChildAt(0); // Background is first child
+    }
+
+    private ImageView getUnitImage(FrameLayout tileContainer) {
+        return (ImageView) tileContainer.getChildAt(1); // Image is second child
     }
 
     private void onTileClicked(int x, int y) {
         if (battleOver || !isPlayerTurn) return;
 
-        android.util.Log.d("TacticalBattle", "Tile clicked: (" + x + ", " + y + ")");
-
         // Check if clicking on enemy - attack
-        if (x == enemy.x && y == enemy.y && isWithinAttackRange(x, y)) {
-            attackTile(x, y);
-            android.util.Log.d("TacticalBattle", "Attacked enemy");
-            updateUI();
+        if (x == enemyUnit.x && y == enemyUnit.y && isAdjacentTo(playerUnit.x, playerUnit.y, x, y)) {
+            if (playerUnit.canAttack()) {
+                attackTile(x, y);
+            } else {
+                Toast.makeText(this, "Already attacked this turn!", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
 
         // Check if valid movement tile
         if (canMoveToTile(x, y)) {
-            moveAxolotlLord(x, y);
-            android.util.Log.d("TacticalBattle", "Moved Axolotl Lord to (" + x + ", " + y + ")");
-            updateUI();
-        } else {
-            android.util.Log.d("TacticalBattle", "Invalid move");
+            movePlayerUnit(x, y);
+            playerUnit.useAction();
+
+            // Check turn end AFTER movement is complete and displayed
+            checkTurnEnd();
+            updateMovementIndicators();
+        }
+    }
+
+    private boolean canMoveToTile(int x, int y) {
+        if (!playerUnit.canAct()) return false;
+
+        if ((x == enemyUnit.x && y == enemyUnit.y) || (x == playerUnit.x && y == playerUnit.y)) {
+            return false;
+        }
+
+        return isAdjacentTo(playerUnit.x, playerUnit.y, x, y);
+    }
+
+    private void movePlayerUnit(int x, int y) {
+        playerUnit.x = x;
+        playerUnit.y = y;
+        android.util.Log.d("TacticalBattle", playerUnit.name + " moved to (" + x + ", " + y + ")");
+
+        // Update display immediately to show new position
+        updateGridDisplay();
+    }
+
+
+    private boolean isAdjacentTo(int x1, int y1, int x2, int y2) {
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+
+        // Only allow orthogonal movement (4 directions, no diagonals)
+        return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+    }
+
+    private void checkTurnEnd() {
+        if (!playerUnit.canAct()) {
+            endPlayerTurn();
         }
     }
 
 
-
+    private void updateMovementIndicators() {
+        updateGridDisplay(); // This will show the new indicators
+    }
 
 
     private void initializeBattle() {
-        int lordHP = sharedPreferences.getInt("Axolotl Lord_hp", 800);
-        int lordAttack = sharedPreferences.getInt("Axolotl Lord_attack", 200);
+        // Get knight assigned to a slot and find which row
+        String assignedKnight = "";
+        int deployedRow = 2;
 
-        // Place Axolotl Lord on far left edge, center vertically
-        axolotlLord = new TacticalUnit("Axolotl Lord", lordHP, lordAttack, 3, 0, 2); // x=0 (leftmost)
+        for (int i = 1; i <= 5; i++) {
+            String slotKnight = sharedPreferences.getString("chapter1_slot_" + i, "");
+            if (!slotKnight.isEmpty()) {
+                assignedKnight = slotKnight;
+                deployedRow = i - 1;
+                android.util.Log.d("TacticalBattle", "Found " + assignedKnight + " in slot " + i);
+                break;
+            }
+        }
 
-        // Place enemy on far right edge, center vertically
-        enemy = new TacticalUnit("Enemy Warrior", 400, 150, 2, 9, 2); // x=9 (rightmost)
+        if (assignedKnight.isEmpty()) {
+            showNoKnightAssignedDialog();
+            return;
+        }
 
-        android.util.Log.d("TacticalBattle", "Battle initialized - Grid: " + GRID_WIDTH + "x" + GRID_HEIGHT);
-        android.util.Log.d("TacticalBattle", "Axolotl Lord at (0,2), Enemy at (9,2)");
+        // Load ANY tactical knight from database
+        TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(assignedKnight);
+
+        if (data != null) {
+            playerUnit = new TacticalUnit(data.name, data.hp, data.attack, data.speed, 0, deployedRow);
+            playerUnit.maxActions = data.actions;
+            playerUnit.resetTurn();
+        } else {
+            // Fallback for any knight
+            int knightHP = sharedPreferences.getInt(assignedKnight + "_hp", 800);
+            int knightAttack = sharedPreferences.getInt(assignedKnight + "_attack", 200);
+            playerUnit = new TacticalUnit(assignedKnight, knightHP, knightAttack, 5, 0, deployedRow);
+            playerUnit.maxActions = 2;
+        }
+
+        // Create enemy (this should also be configurable in the future)
+        enemyUnit = new TacticalUnit("Enemy Warrior", 400, 150, 2, 9, 2);
+        enemyUnit.maxActions = 2;
+        enemyUnit.resetTurn();
+
+        android.util.Log.d("TacticalBattle", "Battle initialized - " + playerUnit.name + " vs " + enemyUnit.name);
+    }
+
+    private void showNoKnightAssignedDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("No Knight Assigned")
+                .setMessage("You must assign a knight to a tactical slot before battle.\n\nGo to Chapter 1 Collection and assign Axolotl Lord to a row.")
+                .setPositiveButton("Return to Chapter 1", (dialog, which) -> finish())
+                .setCancelable(false)
+                .show();
     }
 
     private void updateUI() {
@@ -171,99 +284,248 @@ public class TacticalBattleActivity extends AppCompatActivity {
     }
 
     private void updateGridDisplay() {
-        // Clear all tiles first
+        // Don't update grid display during animations
+        if (isAnimating) {
+            android.util.Log.d("TacticalBattle", "Skipping grid update - animation in progress");
+            return;
+        }
+
+        // Clear all tiles and hide images
         for (int y = 0; y < GRID_HEIGHT; y++) {
             for (int x = 0; x < GRID_WIDTH; x++) {
-                gridTiles[y][x].setBackgroundColor(0xFF4CAF50); // Default green
+                FrameLayout tileContainer = (FrameLayout) gridTiles[y][x];
+                View backgroundTile = getBackgroundTile(tileContainer);
+                ImageView unitImage = getUnitImage(tileContainer);
+
+                // Reset background color
+                backgroundTile.setBackgroundColor(0xFF4CAF50);
+
+                // Hide unit image
+                unitImage.setVisibility(View.GONE);
             }
         }
 
-        // Show unit positions
-        gridTiles[axolotlLord.y][axolotlLord.x].setBackgroundColor(0xFFFFD700); // Gold for Axolotl Lord
-        gridTiles[enemy.y][enemy.x].setBackgroundColor(0xFFFF4444); // Red for enemy
-    }
-
-    private boolean canMoveToTile(int x, int y) {
-        // Can't move to occupied tiles
-        if ((x == enemy.x && y == enemy.y) || (x == axolotlLord.x && y == axolotlLord.y)) {
-            return false;
+        // Show movement indicators if player turn and has actions
+        if (isPlayerTurn && playerUnit.canAct()) {
+            showMovementIndicators();
         }
 
-        // Simple movement - within 2 tiles for now
-        int dx = Math.abs(x - axolotlLord.x);
-        int dy = Math.abs(y - axolotlLord.y);
-        return (dx <= 2 && dy <= 2);
+        // Show unit images
+        showUnitImage(playerUnit.x, playerUnit.y, playerUnit.name, true, false);
+        showUnitImage(enemyUnit.x, enemyUnit.y, enemyUnit.name, false, false);
     }
 
-    private boolean canAttackTile(int x, int y) {
-        // Can attack if enemy is on the tile and within range
-        return (x == enemy.x && y == enemy.y) && isWithinAttackRange(x, y);
+    private void showUnitImage(int x, int y, String unitName, boolean isPlayer, boolean isAttacking) {
+        android.util.Log.d("TacticalBattle", "showUnitImage: " + unitName + ", isPlayer: " + isPlayer + ", isAttacking: " + isAttacking);
+
+        FrameLayout tileContainer = (FrameLayout) gridTiles[y][x];
+        View backgroundTile = getBackgroundTile(tileContainer);
+        ImageView unitImage = getUnitImage(tileContainer);
+
+        // Set background color for unit position
+        if (isPlayer) {
+            backgroundTile.setBackgroundColor(0xFFFFD700); // Gold for player
+        } else {
+            backgroundTile.setBackgroundColor(0xFFFF4444); // Red for enemy
+        }
+
+        // Set unit image based on attack state
+        if (isPlayer) {
+            if (isAttacking) {
+                android.util.Log.d("TacticalBattle", "Setting player attack image");
+                unitImage.setImageResource(R.drawable.player_attack);
+            } else {
+                android.util.Log.d("TacticalBattle", "Setting player idle image");
+                unitImage.setImageResource(R.drawable.player_character);
+            }
+        } else {
+            if (isAttacking) {
+                android.util.Log.d("TacticalBattle", "Setting enemy attack image");
+                unitImage.setImageResource(R.drawable.enemy_attack);
+            } else {
+                android.util.Log.d("TacticalBattle", "Setting enemy idle image");
+                unitImage.setImageResource(R.drawable.enemy_idle);
+            }
+        }
+
+        unitImage.setVisibility(View.VISIBLE);
     }
 
-    private boolean isWithinAttackRange(int x, int y) {
-        // Adjacent tiles for melee attack
-        int dx = Math.abs(x - axolotlLord.x);
-        int dy = Math.abs(y - axolotlLord.y);
-        return dx <= 1 && dy <= 1 && (dx + dy > 0);
+    private void showMovementIndicators() {
+        int[][] directions = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+
+        for (int[] dir : directions) {
+            int targetX = playerUnit.x + dir[0];
+            int targetY = playerUnit.y + dir[1];
+
+            if (targetX < 0 || targetX >= GRID_WIDTH || targetY < 0 || targetY >= GRID_HEIGHT) {
+                continue;
+            }
+
+            FrameLayout tileContainer = (FrameLayout) gridTiles[targetY][targetX];
+            View backgroundTile = getBackgroundTile(tileContainer);
+
+            if (targetX == enemyUnit.x && targetY == enemyUnit.y) {
+                backgroundTile.setBackgroundColor(0xFF333333); // Attack indicator
+            } else {
+                backgroundTile.setBackgroundColor(0xFF2196F3); // Movement indicator
+            }
+        }
     }
 
-    private void moveAxolotlLord(int x, int y) {
-        axolotlLord.x = x;
-        axolotlLord.y = y;
-        android.util.Log.d("TacticalBattle", "Axolotl Lord moved to (" + x + ", " + y + ")");
-    }
 
     private void attackTile(int x, int y) {
-        if (x == enemy.x && y == enemy.y) {
-            enemy.takeDamage(axolotlLord.attack);
-            android.util.Log.d("TacticalBattle", "Axolotl Lord attacked enemy for " + axolotlLord.attack + " damage");
-
-            if (enemy.currentHP <= 0) {
-                playerVictory();
+        if (x == enemyUnit.x && y == enemyUnit.y) {
+            if (!playerUnit.canAttack()) {
+                Toast.makeText(this, "Already attacked this turn!", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            android.util.Log.d("TacticalBattle", "Player attacking - showing animation");
+
+            isAnimating = true;
+            showUnitImage(playerUnit.x, playerUnit.y, playerUnit.name, true, true);
+
+            new android.os.Handler().postDelayed(() -> {
+                enemyUnit.takeDamage(playerUnit.attack);
+                playerUnit.useAttack();
+                android.util.Log.d("TacticalBattle", "Player attack complete - actions remaining: " +
+                        playerUnit.getRemainingActions());
+
+                isAnimating = false;
+                showUnitImage(playerUnit.x, playerUnit.y, playerUnit.name, true, false);
+
+                if (enemyUnit.currentHP <= 0) {
+                    playerVictory();
+                } else {
+                    // Don't automatically end turn - let player continue if they have actions
+                    checkTurnEnd();
+                    updateMovementIndicators();
+                }
+            }, 500);
         }
     }
 
 
     private void endPlayerTurn() {
         isPlayerTurn = false;
-
-        // Simple enemy AI - move toward player and attack if in range
         enemyTurn();
-
+        playerUnit.resetTurn();
         isPlayerTurn = true;
         updateUI();
     }
 
     private void enemyTurn() {
-        // Very simple AI - move toward Axolotl Lord
-        int dx = axolotlLord.x - enemy.x;
-        int dy = axolotlLord.y - enemy.y;
+        enemyUnit.resetTurn();
+        android.util.Log.d("TacticalBattle", "Enemy turn started");
 
-        if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && (Math.abs(dx) + Math.abs(dy) > 0)) {
-            // Enemy is adjacent - attack
-            axolotlLord.takeDamage(enemy.attack);
-            android.util.Log.d("TacticalBattle", "Enemy attacked Axolotl Lord for " + enemy.attack + " damage");
+        // Process enemy actions sequentially with proper delays
+        processEnemyAction();
+    }
 
-            if (axolotlLord.currentHP <= 0) {
-                playerDefeat();
-            }
-        } else {
-            // Move toward player
-            if (Math.abs(dx) > Math.abs(dy)) {
-                enemy.x += (dx > 0) ? 1 : -1;
-            } else {
-                enemy.y += (dy > 0) ? 1 : -1;
-            }
-            android.util.Log.d("TacticalBattle", "Enemy moved to (" + enemy.x + ", " + enemy.y + ")");
+    private void processEnemyAction() {
+        if (!enemyUnit.canAct() || enemyUnit.currentHP <= 0 || playerUnit.currentHP <= 0) {
+            android.util.Log.d("TacticalBattle", "Enemy turn ended - used " +
+                    enemyUnit.actionsUsed + "/" + enemyUnit.maxActions + " actions");
+            return;
         }
+
+        android.util.Log.d("TacticalBattle", "Enemy action " + (enemyUnit.actionsUsed + 1) +
+                "/" + enemyUnit.maxActions);
+
+        // Try to attack first if adjacent and hasn't attacked yet
+        if (isAdjacentTo(enemyUnit.x, enemyUnit.y, playerUnit.x, playerUnit.y) && enemyUnit.canAttack()) {
+            performEnemyAttack();
+        } else if (enemyUnit.canMove()) {
+            // Can still move (either hasn't attacked, or attacked but has actions left)
+            performEnemyMovement();
+        } else {
+            // No valid actions left
+            android.util.Log.d("TacticalBattle", "Enemy has no valid actions - ending turn");
+        }
+    }
+
+    private void performEnemyAttack() {
+        android.util.Log.d("TacticalBattle", "Enemy attacking - showing animation");
+
+        isAnimating = true;
+        showUnitImage(enemyUnit.x, enemyUnit.y, enemyUnit.name, false, true);
+
+        new android.os.Handler().postDelayed(() -> {
+            playerUnit.takeDamage(enemyUnit.attack);
+            enemyUnit.useAttack();
+            android.util.Log.d("TacticalBattle", "Enemy attack complete - actions remaining: " +
+                    enemyUnit.getRemainingActions());
+
+            isAnimating = false;
+            showUnitImage(enemyUnit.x, enemyUnit.y, enemyUnit.name, false, false);
+
+            if (playerUnit.currentHP <= 0) {
+                playerDefeat();
+                return;
+            }
+
+            updateUI();
+
+            // Continue enemy turn if they have more actions (can move after attacking)
+            new android.os.Handler().postDelayed(() -> {
+                processEnemyAction();
+            }, 200);
+
+        }, 500);
+    }
+
+    private void performEnemyMovement() {
+        boolean moved = moveEnemyTowardPlayer();
+        enemyUnit.useAction();
+        android.util.Log.d("TacticalBattle", "Enemy moved - actions remaining: " +
+                enemyUnit.getRemainingActions());
+
+        if (!moved) {
+            android.util.Log.d("TacticalBattle", "Enemy can't move - ending turn early");
+            return;
+        }
+
+        updateUI();
+
+        // Continue with next enemy action after a short delay
+        new android.os.Handler().postDelayed(() -> {
+            processEnemyAction();
+        }, 300);
+    }
+
+    private boolean moveEnemyTowardPlayer() {
+        int dx = playerUnit.x - enemyUnit.x;
+        int dy = playerUnit.y - enemyUnit.y;
+
+        int newX = enemyUnit.x;
+        int newY = enemyUnit.y;
+
+        // Move one step toward player (orthogonal only)
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Move horizontally
+            newX += (dx > 0) ? 1 : -1;
+        } else if (Math.abs(dy) > 0) {
+            // Move vertically
+            newY += (dy > 0) ? 1 : -1;
+        }
+
+        // Check if new position is valid and not occupied
+        if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT &&
+                !(newX == playerUnit.x && newY == playerUnit.y)) {
+            enemyUnit.x = newX;
+            enemyUnit.y = newY;
+            return true;
+        }
+
+        return false;
     }
 
     private void playerVictory() {
         battleOver = true;
         new AlertDialog.Builder(this)
                 .setTitle("🏆 VICTORY!")
-                .setMessage("Axolotl Lord has defeated the enemy warrior!\n\nTactical mastery achieved!")
+                .setMessage("Axolotl Lord has defeated the enemyUnit warrior!\n\nTactical mastery achieved!")
                 .setPositiveButton("Return to Chapter 1", (dialog, which) -> finish())
                 .setCancelable(false)
                 .show();
