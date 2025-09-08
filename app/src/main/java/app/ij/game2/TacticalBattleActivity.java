@@ -19,7 +19,10 @@ public class TacticalBattleActivity extends AppCompatActivity {
     private Button endTurnButton, retreatButton;
     private SharedPreferences sharedPreferences;
     private boolean isAnimating = false;
-
+    private boolean isPlayerAttacking = false;
+    private boolean isPlayerMoving = false;
+    private TextView turnIndicator;
+    private TextView actionCounter;
     // Battle state
     private TacticalUnit playerUnit;
     private TacticalUnit enemyUnit;
@@ -71,7 +74,8 @@ public class TacticalBattleActivity extends AppCompatActivity {
         // REMOVED: turnIndicator, playerUnitStats, enemyUnitStats
         endTurnButton = findViewById(R.id.endTurnButton);
         retreatButton = findViewById(R.id.retreatButton);
-
+        turnIndicator = findViewById(R.id.turnIndicator);
+        actionCounter = findViewById(R.id.actionCounter);
         createBattleGrid();
 
         endTurnButton.setOnClickListener(v -> endPlayerTurn());
@@ -160,26 +164,33 @@ public class TacticalBattleActivity extends AppCompatActivity {
     }
 
     private void onTileClicked(int x, int y) {
-        if (battleOver || !isPlayerTurn) return;
+        if (battleOver || !isPlayerTurn || isPlayerAttacking || isPlayerMoving) return;
+
+        // Safety check
+        if (playerUnit == null || enemyUnit == null) {
+            android.util.Log.d("TacticalBattle", "Battle units not initialized - ignoring click");
+            return;
+        }
 
         // Check if clicking on enemy - attack
         if (x == enemyUnit.x && y == enemyUnit.y && isAdjacentTo(playerUnit.x, playerUnit.y, x, y)) {
-            if (playerUnit.canAttack()) {
-                attackTile(x, y);
-            } else {
-                Toast.makeText(this, "Already attacked this turn!", Toast.LENGTH_SHORT).show();
-            }
+            attackTile(x, y);
             return;
         }
 
         // Check if valid movement tile
         if (canMoveToTile(x, y)) {
+            isPlayerMoving = true;
+
             movePlayerUnit(x, y);
             playerUnit.useAction();
 
-            // Check turn end AFTER movement is complete and displayed
-            checkTurnEnd();
-            updateMovementIndicators();
+            // Small delay to prevent spam, then re-enable
+            new android.os.Handler().postDelayed(() -> {
+                isPlayerMoving = false;
+                checkTurnEnd();
+                updateMovementIndicators();
+            }, 100);
         }
     }
 
@@ -228,65 +239,83 @@ public class TacticalBattleActivity extends AppCompatActivity {
         String assignedKnight = "";
         int deployedRow = 2;
 
+        // Check all slots to find assigned knight and row
         for (int i = 1; i <= 5; i++) {
             String slotKnight = sharedPreferences.getString("chapter1_slot_" + i, "");
             if (!slotKnight.isEmpty()) {
                 assignedKnight = slotKnight;
                 deployedRow = i - 1;
-                android.util.Log.d("TacticalBattle", "Found " + assignedKnight + " in slot " + i);
+                android.util.Log.d("TacticalBattle", "Found " + assignedKnight + " in slot " + i + " (row " + deployedRow + ")");
                 break;
             }
         }
 
         if (assignedKnight.isEmpty()) {
+            android.util.Log.d("TacticalBattle", "No knight assigned - showing dialog and ending battle");
             showNoKnightAssignedDialog();
-            return;
+            return; // CRITICAL: Stop execution here
         }
 
-        // Load ANY tactical knight from database
+        // Load tactical knight data from database
         TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(assignedKnight);
 
         if (data != null) {
             playerUnit = new TacticalUnit(data.name, data.hp, data.attack, data.speed, 0, deployedRow);
             playerUnit.maxActions = data.actions;
+            playerUnit.maxAttacks = 1;
             playerUnit.resetTurn();
+
+            android.util.Log.d("TacticalBattle", "Loaded " + data.name + " with " + data.actions +
+                    " actions, positioned at row " + deployedRow);
         } else {
-            // Fallback for any knight
-            int knightHP = sharedPreferences.getInt(assignedKnight + "_hp", 800);
-            int knightAttack = sharedPreferences.getInt(assignedKnight + "_attack", 200);
-            playerUnit = new TacticalUnit(assignedKnight, knightHP, knightAttack, 5, 0, deployedRow);
+            // Fallback
+            int lordHP = sharedPreferences.getInt(assignedKnight + "_hp", 800);
+            int lordAttack = sharedPreferences.getInt(assignedKnight + "_attack", 200);
+            playerUnit = new TacticalUnit(assignedKnight, lordHP, lordAttack, 5, 0, deployedRow);
             playerUnit.maxActions = 2;
+            playerUnit.maxAttacks = 1;
         }
 
-        // Create enemy (this should also be configurable in the future)
+        // Create enemy (keep at right side, middle row)
         enemyUnit = new TacticalUnit("Enemy Warrior", 400, 150, 2, 9, 2);
         enemyUnit.maxActions = 2;
+        enemyUnit.maxAttacks = 1;
         enemyUnit.resetTurn();
 
-        android.util.Log.d("TacticalBattle", "Battle initialized - " + playerUnit.name + " vs " + enemyUnit.name);
+        android.util.Log.d("TacticalBattle", "Battle initialized - Player at (0," + deployedRow + "), Enemy at (9,2)");
     }
 
     private void showNoKnightAssignedDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("No Knight Assigned")
-                .setMessage("You must assign a knight to a tactical slot before battle.\n\nGo to Chapter 1 Collection and assign Axolotl Lord to a row.")
-                .setPositiveButton("Return to Chapter 1", (dialog, which) -> finish())
-                .setCancelable(false)
+                .setMessage("You must assign a knight to a tactical slot before battle.\n\nGo to Chapter 1 Collection and assign a tactical knight to a battlefield row.")
+                .setPositiveButton("Return to Chapter 1", (dialog, which) -> {
+                    android.util.Log.d("TacticalBattle", "No knight dialog - returning to Chapter 1");
+                    finish();
+                })
+                .setOnCancelListener(dialog -> {
+                    android.util.Log.d("TacticalBattle", "No knight dialog cancelled - returning to Chapter 1");
+                    finish();
+                })
+                .setCancelable(true)
                 .show();
     }
 
     private void updateUI() {
-        // REMOVED all UI text updates - just update grid
+        // Just update the battle info display
+        updateBattleInfo();
         updateGridDisplay();
-
-        // Enable/disable buttons
-        endTurnButton.setEnabled(isPlayerTurn && !battleOver);
     }
 
     private void updateGridDisplay() {
         // Don't update grid display during animations
         if (isAnimating) {
             android.util.Log.d("TacticalBattle", "Skipping grid update - animation in progress");
+            return;
+        }
+
+        if (playerUnit == null || enemyUnit == null) {
+            android.util.Log.d("TacticalBattle", "Battle units not initialized - skipping grid update");
             return;
         }
 
@@ -376,31 +405,39 @@ public class TacticalBattleActivity extends AppCompatActivity {
 
     private void attackTile(int x, int y) {
         if (x == enemyUnit.x && y == enemyUnit.y) {
+            if (isPlayerAttacking) {
+                android.util.Log.d("TacticalBattle", "Attack already in progress - ignoring spam");
+                return;
+            }
+
             if (!playerUnit.canAttack()) {
                 Toast.makeText(this, "Already attacked this turn!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            android.util.Log.d("TacticalBattle", "Player attacking - showing animation");
-
+            isPlayerAttacking = true;
             isAnimating = true;
+
+            // Use attack immediately
+            playerUnit.useAttack();
+            updateBattleInfo(); // Update display immediately after using action
+
             showUnitImage(playerUnit.x, playerUnit.y, playerUnit.name, true, true);
 
             new android.os.Handler().postDelayed(() -> {
                 enemyUnit.takeDamage(playerUnit.attack);
-                playerUnit.useAttack();
-                android.util.Log.d("TacticalBattle", "Player attack complete - actions remaining: " +
-                        playerUnit.getRemainingActions());
 
+                isPlayerAttacking = false;
                 isAnimating = false;
+
                 showUnitImage(playerUnit.x, playerUnit.y, playerUnit.name, true, false);
 
                 if (enemyUnit.currentHP <= 0) {
                     playerVictory();
                 } else {
-                    // Don't automatically end turn - let player continue if they have actions
                     checkTurnEnd();
                     updateMovementIndicators();
+                    updateBattleInfo(); // Update again after action completes
                 }
             }, 500);
         }
@@ -408,6 +445,11 @@ public class TacticalBattleActivity extends AppCompatActivity {
 
 
     private void endPlayerTurn() {
+        // Clear all action flags
+        isPlayerAttacking = false;
+        isPlayerMoving = false;
+        isAnimating = false;
+
         isPlayerTurn = false;
         enemyTurn();
         playerUnit.resetTurn();
@@ -549,4 +591,55 @@ public class TacticalBattleActivity extends AppCompatActivity {
                 .setNegativeButton("Keep Fighting", null)
                 .show();
     }
+
+    private void updateTurnIndicator() {
+        if (battleOver) {
+            turnIndicator.setText("BATTLE OVER");
+            turnIndicator.setTextColor(0xFFFF4444);
+            return;
+        }
+
+        if (isPlayerTurn) {
+            turnIndicator.setText("YOUR TURN");
+            turnIndicator.setTextColor(0xFFFFD700);
+        } else {
+            turnIndicator.setText("ENEMY TURN");
+            turnIndicator.setTextColor(0xFFFF4444);
+        }
+    }
+
+    private void updateActionCounter() {
+        if (battleOver) {
+            actionCounter.setText("Battle Complete");
+            return;
+        }
+
+        if (isPlayerTurn) {
+            int actionsLeft = playerUnit.maxActions - playerUnit.actionsUsed;
+            int attacksLeft = playerUnit.maxAttacks - playerUnit.attacksUsed;
+            actionCounter.setText(playerUnit.name + " - Actions: " + actionsLeft + "/" + playerUnit.maxActions +
+                    " | Attacks: " + attacksLeft + "/" + playerUnit.maxAttacks);
+        } else {
+            int actionsLeft = enemyUnit.maxActions - enemyUnit.actionsUsed;
+            int attacksLeft = enemyUnit.maxAttacks - enemyUnit.attacksUsed;
+            actionCounter.setText(enemyUnit.name + " - Actions: " + actionsLeft + "/" + enemyUnit.maxActions +
+                    " | Attacks: " + attacksLeft + "/" + enemyUnit.maxAttacks);
+        }
+    }
+
+
+    private void updateBattleInfo() {
+        updateTurnIndicator();
+        updateActionCounter();
+    }
+
+    // Add this call wherever you currently update the UI
+    private void refreshUI() {
+        updateGridDisplay();
+        updateBattleInfo();
+    }
+
+
+
+
 }

@@ -155,32 +155,22 @@ public class CollectionActivity extends AppCompatActivity {
     }
 
     private void loadTacticalKnight(String knightName) {
+        // Load tactical knight data
         TacticalKnightDatabase.TacticalKnightData data = TacticalKnightDatabase.getTacticalKnightDataByName(knightName);
 
         if (data != null) {
-            TacticalKnight tacticalKnight = new TacticalKnight(
-                    data.name, data.hp, data.attack, data.speed,
-                    data.actions, data.movementStyle, data.attackStyle
-            );
+            // Create display knight using legacy constructor (no database lookup)
+            Knight displayKnight = new Knight(data.name, data.hp, data.attack, "player_character");
+            displayKnight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
 
-            tacticalKnight.setQuantity(sharedPreferences.getInt(knightName + "_quantity", 1));
-            // REMOVED: loadKnightTrait(tacticalKnight); // No traits for Chapter 1
+            // Override the rarity detection for tactical knights
+            displayKnight.setTacticalRarity(data.rarity);
 
-            Knight displayKnight = convertTacticalToDisplayKnight(tacticalKnight);
             allKnights.add(displayKnight);
         }
     }
 
-    private Knight convertTacticalToDisplayKnight(TacticalKnight tactical) {
-        // Create a display knight that shows tactical stats
-        Knight displayKnight = new Knight(tactical.getName(), tactical.getHp(),
-                tactical.getAttack(), "player_character");
-        displayKnight.setQuantity(tactical.getQuantity());
-        if (tactical.hasTrait()) {
-            displayKnight.setTrait(tactical.getTrait());
-        }
-        return displayKnight;
-    }
+
 
     private void loadKnightTrait(TacticalKnight knight) {
         String traitName = sharedPreferences.getString(knight.getName() + "_trait", "");
@@ -942,6 +932,11 @@ public class CollectionActivity extends AppCompatActivity {
 
     // Update the getKnightRarity() method to use database
     private String getKnightRarity(String knightName) {
+        String tacticalRarity = sharedPreferences.getString(knightName + "_tactical_rarity", "");
+        if (!tacticalRarity.isEmpty()) {
+            return tacticalRarity.toUpperCase(); // Convert to match filter format
+        }
+
         // Check if evolved knight
         if (knightName.startsWith("Evolved ")) {
             return "EVOLVED";

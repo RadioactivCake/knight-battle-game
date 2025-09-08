@@ -15,38 +15,67 @@
         android:background="#2E7D32"
         android:padding="0dp" />
 
-    <!-- Bottom Button Bar -->
+    <!-- Bottom UI Container -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:orientation="horizontal"
-        android:background="#1A252F"
-        android:elevation="4dp"
-        android:padding="8dp">
+        android:padding="16dp"
+        android:background="#CC000000">
 
+        <!-- End Turn Button - Shorter -->
         <Button
             android:id="@+id/endTurnButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_width="120dp"
+            android:layout_height="50dp"
             android:text="END TURN"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:background="@drawable/attack_button_style"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="4dp" />
+            android:textColor="@android:color/white" />
 
+        <!-- Battle Information Section -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="16dp"
+            android:gravity="center">
+
+            <!-- Current Turn Indicator -->
+            <TextView
+                android:id="@+id/turnIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="YOUR TURN"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFD700"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Action Counter -->
+            <TextView
+                android:id="@+id/actionCounter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Actions: 2/2 | Attacks: 1/1"
+                android:textSize="11sp"
+                android:textColor="@android:color/white" />
+
+        </LinearLayout>
+
+        <!-- Retreat Button - Shorter -->
         <Button
             android:id="@+id/retreatButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_width="120dp"
+            android:layout_height="50dp"
             android:text="RETREAT"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:background="@drawable/secondary_button_style"
-            android:textColor="@android:color/white"
-            android:layout_marginStart="4dp" />
+            android:textColor="@android:color/white" />
 
     </LinearLayout>
 

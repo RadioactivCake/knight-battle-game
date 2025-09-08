@@ -165,7 +165,7 @@ public class Chapter1Fragment extends Fragment {
         });
 
         chapter1ChestButton.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ChestActivity.class);
+            Intent intent = new Intent(getActivity(), TacticalChestActivity.class);
             startActivity(intent);
         });
 

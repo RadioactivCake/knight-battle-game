@@ -12,6 +12,7 @@ public class Knight {
     private boolean isEquipped;
     private int quantity;
     private Trait currentTrait;
+    private String tacticalRarity = null; // Add this field
 
     // Constructor now takes knight ID and loads data from database
     public Knight(String knightId) {
@@ -219,6 +220,14 @@ public class Knight {
         }
 
         return breakdown.toString();
+    }
+
+    public void setTacticalRarity(String rarity) {
+        this.tacticalRarity = rarity;
+    }
+
+    public String getTacticalRarity() {
+        return tacticalRarity;
     }
 
 }
